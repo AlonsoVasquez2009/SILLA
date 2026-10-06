@@ -1,0 +1,13 @@
+{
+  "name": "mesas-sillas-backend",
+  "version": "1.0.0",
+  "description": "API REST para gestión de mesas y sillas",
+  "main": "server.js",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {}
+}

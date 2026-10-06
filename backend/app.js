@@ -4,6 +4,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { rutaNoEncontrada, manejarErrores } = require('./middleware/errores');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -23,12 +24,11 @@ app.use(
   })
 );
 
-// Ruta de comprobación: indica si la API está viva.
 app.get('/api/salud', (req, res) => {
   res.json({ estado: 'ok', fecha: new Date().toISOString() });
 });
 
-// Las rutas de cada módulo se montarán en fases posteriores.
+app.use('/api/auth', authRoutes);
 
 app.use(rutaNoEncontrada);
 app.use(manejarErrores);

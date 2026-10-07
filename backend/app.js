@@ -5,6 +5,7 @@ const express = require('express');
 const session = require('express-session');
 const { rutaNoEncontrada, manejarErrores } = require('./middleware/errores');
 const authRoutes = require('./routes/authRoutes');
+const inventarioRoutes = require('./routes/inventarioRoutes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get('/api/salud', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/inventario', inventarioRoutes);
 
 app.use(rutaNoEncontrada);
 app.use(manejarErrores);

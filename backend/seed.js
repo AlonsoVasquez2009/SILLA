@@ -1,4 +1,5 @@
-// Crea el usuario administrador inicial. Se puede ejecutar varias veces sin duplicarlo.
+// Crea el usuario administrador y el inventario inicial.
+// Se puede ejecutar varias veces sin duplicar nada.
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { pool } = require('./db');
@@ -24,6 +25,29 @@ async function crearAdmin() {
   console.log('Administrador listo:', ADMIN_EMAIL);
 }
 
-crearAdmin()
-  .catch((err) => console.error('Error al crear el administrador:', err.message))
+async function crearInventarioInicial() {
+  const recursos = [
+    { nombre: 'Mesa estándar', tipo: 'mesa', total: 20 },
+    { nombre: 'Silla estándar', tipo: 'silla', total: 100 },
+  ];
+
+  for (const r of recursos) {
+    await pool.query(
+      `INSERT INTO recursos (nombre, tipo, total, disponibles, reservados, prestados)
+       VALUES ($1, $2, $3, $3, 0, 0)
+       ON CONFLICT (nombre) DO NOTHING`,
+      [r.nombre, r.tipo, r.total]
+    );
+  }
+
+  console.log('Inventario inicial listo: 20 mesas, 100 sillas');
+}
+
+async function iniciar() {
+  await crearAdmin();
+  await crearInventarioInicial();
+}
+
+iniciar()
+  .catch((err) => console.error('Error al poblar la base de datos:', err.message))
   .finally(() => pool.end());

@@ -8,6 +8,7 @@ const reservaRoutes = require('./routes/reservaRoutes');
 const prestamoRoutes = require('./routes/prestamoRoutes');
 const devolucionRoutes = require('./routes/devolucionRoutes');
 const historialRoutes = require('./routes/historialRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/reservas', reservaRoutes);
 app.use('/api/prestamos', prestamoRoutes);
 app.use('/api/devoluciones', devolucionRoutes);
 app.use('/api/historial', historialRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use(rutaNoEncontrada);
 app.use(manejarErrores);

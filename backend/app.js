@@ -1,11 +1,10 @@
-// Configura Express: middlewares, sesiones y rutas.
-// No arranca el servidor; eso lo hace server.js.
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { rutaNoEncontrada, manejarErrores } = require('./middleware/errores');
 const authRoutes = require('./routes/authRoutes');
 const inventarioRoutes = require('./routes/inventarioRoutes');
+const reservaRoutes = require('./routes/reservaRoutes');
 
 const app = express();
 
@@ -31,6 +30,7 @@ app.get('/api/salud', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inventario', inventarioRoutes);
+app.use('/api/reservas', reservaRoutes);
 
 app.use(rutaNoEncontrada);
 app.use(manejarErrores);

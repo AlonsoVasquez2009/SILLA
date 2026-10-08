@@ -45,7 +45,7 @@
 
     // Si ya hay sesión activa, no mostrar el login.
     api.me().then(() => {
-      window.location.href = 'dashboard.html';
+      window.location.href = 'inicio.html';
     }).catch(() => {});
 
     form.addEventListener('submit', async (evento) => {
@@ -59,7 +59,7 @@
 
       try {
         await api.login(email, password);
-        window.location.href = 'dashboard.html';
+        window.location.href = 'inicio.html';
       } catch (error) {
         mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
         boton.disabled = false;

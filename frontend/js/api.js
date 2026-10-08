@@ -3,10 +3,9 @@
 
 const BASE_URL = '/api';
 
-// Hace la petición y lanza un error legible si el backend responde con un error.
 async function solicitar(ruta, opciones = {}) {
   const respuesta = await fetch(BASE_URL + ruta, {
-    credentials: 'include', // envía la cookie de sesión
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...opciones,
   });
@@ -15,7 +14,7 @@ async function solicitar(ruta, opciones = {}) {
   try {
     cuerpo = await respuesta.json();
   } catch {
-    // Puede no haber cuerpo JSON (por ejemplo, en algunas respuestas vacías).
+    // Puede no haber cuerpo JSON.
   }
 
   if (!respuesta.ok) {
@@ -62,4 +61,10 @@ const api = {
   // Dashboard y reportes
   obtenerDashboard: () => solicitar('/dashboard'),
   obtenerReporte: (tipo) => solicitar(`/reportes/${tipo}`),
+
+  // Usuarios
+  listarUsuarios: () => solicitar('/usuarios'),
+  crearUsuario: (datos) => solicitar('/usuarios', { method: 'POST', body: JSON.stringify(datos) }),
+  modificarUsuario: (id, datos) =>
+    solicitar(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
 };

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial — Mesas y Sillas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <nav class="barra-nav">
+    <a href="dashboard.html" class="barra-nav__marca">Mesas y Sillas</a>
+    <div class="barra-nav__enlaces">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="inventario.html">Inventario</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="prestamos.html">Préstamos</a>
+      <a href="historial.html" class="activo">Historial</a>
+      <a href="usuarios.html">Usuarios</a>
+    </div>
+    <div class="barra-nav__usuario">
+      <span id="usuario-actual"></span>
+      <button class="boton boton--secundario" id="boton-logout">Salir</button>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+    <h1>Préstamos vencidos</h1>
+    <div id="mensaje-vencidos"></div>
+    <div class="tarjeta">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Fecha prevista</th>
+              <th>Días de atraso</th>
+              <th>Recursos pendientes</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-vencidos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h1>Historial de operaciones</h1>
+
+    <div class="tarjeta">
+      <div class="barra-acciones">
+        <select id="filtro-tipo">
+          <option value="">Todas las operaciones</option>
+          <option value="Reserva creada">Reserva creada</option>
+          <option value="Reserva cancelada">Reserva cancelada</option>
+          <option value="Préstamo creado">Préstamo creado</option>
+          <option value="Devolución registrada">Devolución registrada</option>
+        </select>
+      </div>
+      <div id="mensaje-historial"></div>
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Operación</th>
+              <th>Recurso</th>
+              <th>Cantidad</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-historial"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/historial.js"></script>
+</body>
+</html>

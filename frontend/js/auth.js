@@ -13,11 +13,18 @@ async function protegerPagina(rolRequerido) {
       return null;
     }
     pintarUsuario(usuario);
+    ocultarDashboardSiNoAdmin(usuario);
     return usuario;
   } catch {
     window.location.href = 'index.html';
     return null;
   }
+}
+
+function ocultarDashboardSiNoAdmin(usuario) {
+  if (usuario.rol === 'admin') return;
+  const enlace = document.getElementById('enlace-dashboard');
+  if (enlace) enlace.remove();
 }
 
 function pintarUsuario(usuario) {

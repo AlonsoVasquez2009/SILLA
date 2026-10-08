@@ -1,5 +1,5 @@
 (async () => {
-  const usuario = await protegerPagina();
+  const usuario = await protegerPagina('admin');
   if (!usuario) return;
   configurarLogout();
 

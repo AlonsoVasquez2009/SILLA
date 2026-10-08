@@ -297,3 +297,9 @@ img.proceso__visual {
   object-fit: cover;
   display: block;
 }
+
+.tarjeta-modulo__visual {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mesas y Sillas — Gestión de mobiliario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+  <link rel="stylesheet" href="css/inicio.css" />
+</head>
+<body>
+  <header class="encabezado-publico">
+    <a href="inicio.html" class="marca-publica">
+      <span class="marca-publica__icono">◆</span>
+      Mesas y Sillas
+    </a>
+    <nav class="nav-publica">
+      <a href="inicio.html" class="activo">Inicio</a>
+      <a href="#modulos">Módulos</a>
+      <a href="#proceso">Cómo funciona</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <a href="index.html" class="boton boton--oscuro">Iniciar sesión</a>
+  </header>
+
+  <section class="hero">
+    <div class="hero__texto">
+      <p class="hero__eyebrow">Gestión de mobiliario</p>
+      <h1>Reserva, presta y devuelve<br />mesas y sillas sin enredos</h1>
+      <p class="hero__descripcion">
+        Un solo lugar para administrar el inventario, aprobar reservas y llevar
+        el control de cada préstamo, de principio a fin.
+      </p>
+      <div class="hero__acciones">
+        <a href="index.html" class="boton">Entrar al sistema</a>
+        <a href="#proceso" class="hero__enlace-secundario">Cómo funciona</a>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <div class="figura-mesa"></div>
+      <div class="figura-silla figura-silla--1"></div>
+      <div class="figura-silla figura-silla--2"></div>
+      <div class="hero__etiqueta">
+        <strong>Inventario en vivo</strong>
+        <span>Disponibilidad siempre actualizada</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="beneficios">
+    <div class="beneficio">
+      <div class="beneficio__icono">⟲</div>
+      <h3>Inventario centralizado</h3>
+      <p>Una sola fuente de verdad: disponibles, reservados y prestados siempre cuadran.</p>
+    </div>
+    <div class="beneficio">
+      <div class="beneficio__icono">▦</div>
+      <h3>Reservas automáticas</h3>
+      <p>Se confirman al instante si hay disponibilidad, sin pasos de más.</p>
+    </div>
+    <div class="beneficio">
+      <div class="beneficio__icono">⇄</div>
+      <h3>Devoluciones parciales</h3>
+      <p>Devuelve de a poco y el sistema actualiza el estado del préstamo solo.</p>
+    </div>
+    <div class="beneficio">
+      <div class="beneficio__icono">▤</div>
+      <h3>Historial completo</h3>
+      <p>Cada operación queda registrada: quién, qué, cuándo y cuánto.</p>
+    </div>
+  </section>
+
+  <section class="modulos" id="modulos">
+    <div class="modulos__encabezado">
+      <div>
+        <p class="hero__eyebrow">El sistema</p>
+        <h2>Todo lo que necesitas,<br />en un solo lugar</h2>
+      </div>
+      <a href="index.html" class="modulos__ver-todo">Entrar al sistema →</a>
+    </div>
+    <div class="modulos__grid">
+      <a href="index.html" class="tarjeta-modulo">
+        <div class="tarjeta-modulo__visual tarjeta-modulo__visual--inventario"></div>
+        <div class="tarjeta-modulo__texto">
+          <h3>Inventario</h3>
+          <span>Mesas y sillas, al detalle</span>
+        </div>
+      </a>
+      <a href="index.html" class="tarjeta-modulo">
+        <div class="tarjeta-modulo__visual tarjeta-modulo__visual--reservas"></div>
+        <div class="tarjeta-modulo__texto">
+          <h3>Reservas</h3>
+          <span>Confirmación automática</span>
+        </div>
+      </a>
+      <a href="index.html" class="tarjeta-modulo">
+        <div class="tarjeta-modulo__visual tarjeta-modulo__visual--prestamos"></div>
+        <div class="tarjeta-modulo__texto">
+          <h3>Préstamos</h3>
+          <span>Directos o desde una reserva</span>
+        </div>
+      </a>
+      <a href="index.html" class="tarjeta-modulo">
+        <div class="tarjeta-modulo__visual tarjeta-modulo__visual--historial"></div>
+        <div class="tarjeta-modulo__texto">
+          <h3>Historial</h3>
+          <span>Cada operación, registrada</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="proceso" id="proceso">
+    <div class="proceso__visual"></div>
+    <div class="proceso__texto">
+      <p class="hero__eyebrow">Un proceso simple</p>
+      <h2>Funciona en 3 pasos</h2>
+      <ol class="proceso__lista">
+        <li>
+          <span class="proceso__numero">1</span>
+          <div>
+            <h3>Reserva</h3>
+            <p>Elige las mesas y sillas que necesitas, con fecha y horario.</p>
+          </div>
+        </li>
+        <li>
+          <span class="proceso__numero">2</span>
+          <div>
+            <h3>Recibe el préstamo</h3>
+            <p>El administrador convierte la reserva en préstamo cuando entrega el mobiliario.</p>
+          </div>
+        </li>
+        <li>
+          <span class="proceso__numero">3</span>
+          <div>
+            <h3>Devuelve</h3>
+            <p>Se registra la devolución, completa o parcial, y el inventario se actualiza solo.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="pie-publico" id="contacto">
+    <span>Mesas y Sillas — Sistema interno de gestión</span>
+    <a href="index.html">Iniciar sesión</a>
+  </footer>
+</body>
+</html>

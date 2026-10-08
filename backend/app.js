@@ -9,6 +9,7 @@ const prestamoRoutes = require('./routes/prestamoRoutes');
 const devolucionRoutes = require('./routes/devolucionRoutes');
 const historialRoutes = require('./routes/historialRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const reporteRoutes = require('./routes/reporteRoutes');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/prestamos', prestamoRoutes);
 app.use('/api/devoluciones', devolucionRoutes);
 app.use('/api/historial', historialRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reportes', reporteRoutes);
 
 app.use(rutaNoEncontrada);
 app.use(manejarErrores);

@@ -62,7 +62,7 @@
 
       try {
         await api.registrarCliente({ nombre, email, password });
-        window.location.href = 'reservas.html';
+        window.location.href = 'inicio.html';
       } catch (error) {
         mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
         boton.disabled = false;

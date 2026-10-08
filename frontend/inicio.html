@@ -39,10 +39,8 @@
         <a href="#proceso" class="hero__enlace-secundario">Cómo funciona</a>
       </div>
     </div>
-    <div class="hero__visual">
-      <div class="figura-mesa"></div>
-      <div class="figura-silla figura-silla--1"></div>
-      <div class="figura-silla figura-silla--2"></div>
+        <div class="hero__visual">
+      <img src="https://images.unsplash.com/photo-1643036078703-61c3a61fecb5?fm=jpg&q=70&w=1200&auto=format&fit=crop" alt="Mesa de madera con sillas" class="hero__foto" />
       <div class="hero__etiqueta">
         <strong>Inventario en vivo</strong>
         <span>Disponibilidad siempre actualizada</span>
@@ -114,7 +112,7 @@
   </section>
 
   <section class="proceso" id="proceso">
-    <div class="proceso__visual"></div>
+        <img src="https://images.unsplash.com/photo-1613648928095-5e944023d230?fm=jpg&q=70&w=1200&auto=format&fit=crop" alt="Mesa y sillas de madera" class="proceso__visual" />
     <div class="proceso__texto">
       <p class="hero__eyebrow">Un proceso simple</p>
       <h2>Funciona en 3 pasos</h2>
@@ -148,5 +146,43 @@
     <span>Mesas y Sillas — Sistema interno de gestión</span>
     <a href="index.html">Iniciar sesión</a>
   </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    (async () => {
+      try {
+        const { usuario } = await api.me();
+        const acciones = document.querySelector(".encabezado-publico");
+        const enlacesViejos = acciones.querySelectorAll("a.boton--oscuro, a.hero__enlace-secundario");
+        enlacesViejos.forEach((el) => el.remove());
+
+        const span = document.createElement("span");
+        span.style.color = "var(--texto-suave)";
+        span.style.fontSize = "0.9rem";
+        span.style.marginRight = "var(--espacio-md)";
+        span.textContent = usuario.nombre;
+
+        const botonSalir = document.createElement("button");
+        botonSalir.className = "boton boton--secundario";
+        botonSalir.textContent = "Salir";
+        botonSalir.addEventListener("click", async () => {
+          await api.logout();
+          window.location.reload();
+        });
+
+        acciones.appendChild(span);
+        acciones.appendChild(botonSalir);
+
+        const nav = document.querySelector(".nav-publica");
+        const destino = usuario.rol === "admin" ? "dashboard.html" : "reservas.html";
+        const enlaceSistema = document.createElement("a");
+        enlaceSistema.href = destino;
+        enlaceSistema.textContent = usuario.rol === "admin" ? "Panel" : "Mis reservas";
+        nav.appendChild(enlaceSistema);
+      } catch {
+        // Sin sesión: se deja el encabezado público tal cual.
+      }
+    })();
+  </script>
 </body>
 </html>

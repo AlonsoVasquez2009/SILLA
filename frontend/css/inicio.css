@@ -283,3 +283,17 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Fotos reales (hero y proceso) */
+.hero__foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+img.proceso__visual {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

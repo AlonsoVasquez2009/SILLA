@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/estilos.css" />
   <link rel="stylesheet" href="css/componentes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <nav class="barra-nav">
@@ -34,6 +35,19 @@
 
     <h2 style="margin-top: var(--espacio-lg);">Operaciones</h2>
     <section class="resumen-grid" id="grid-operaciones"></section>
+
+    <h2 style="margin-top: var(--espacio-lg);">Gráficas</h2>
+    <section class="resumen-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+      <div class="tarjeta">
+        <canvas id="grafica-mesas"></canvas>
+      </div>
+      <div class="tarjeta">
+        <canvas id="grafica-sillas"></canvas>
+      </div>
+      <div class="tarjeta" style="grid-column: 1 / -1;">
+        <canvas id="grafica-operaciones"></canvas>
+      </div>
+    </section>
   </main>
 
   <script src="js/api.js"></script>

@@ -32,6 +32,7 @@ const api = {
   login: (email, password) =>
     solicitar('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   logout: () => solicitar('/auth/logout', { method: 'POST' }),
+  registrarCliente: (datos) => solicitar('/auth/registro', { method: 'POST', body: JSON.stringify(datos) }),
   me: () => solicitar('/auth/me'),
 
   // Inventario

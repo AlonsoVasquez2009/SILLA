@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario — Mesas y Sillas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <nav class="barra-nav">
+    <a href="dashboard.html" class="barra-nav__marca">Mesas y Sillas</a>
+    <div class="barra-nav__enlaces">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="inventario.html" class="activo">Inventario</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="prestamos.html">Préstamos</a>
+      <a href="historial.html" id="enlace-historial">Historial</a>
+      <a href="usuarios.html" id="enlace-usuarios">Usuarios</a>
+    </div>
+    <div class="barra-nav__usuario">
+      <span id="usuario-actual"></span>
+      <button class="boton boton--secundario" id="boton-logout">Salir</button>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+    <h1>Inventario</h1>
+    <div id="mensaje"></div>
+
+    <div class="tarjeta">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Recurso</th>
+              <th>Total</th>
+              <th>Disponibles</th>
+              <th>Reservados</th>
+              <th>Prestados</th>
+              <th id="columna-accion"></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-fondo" id="modal-fondo">
+    <div class="modal">
+      <h3>Cambiar total</h3>
+      <p id="modal-nombre-recurso" style="color: var(--texto-suave);"></p>
+      <div class="campo">
+        <label for="modal-total">Nuevo total</label>
+        <input type="number" id="modal-total" min="0" />
+      </div>
+      <div id="modal-mensaje"></div>
+      <div class="modal__acciones">
+        <button class="boton boton--secundario" id="modal-cancelar">Cancelar</button>
+        <button class="boton" id="modal-guardar">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/inventario.js"></script>
+</body>
+</html>

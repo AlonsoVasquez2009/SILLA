@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const session = require('express-session');
 const { rutaNoEncontrada, manejarErrores } = require('./middleware/errores');
 const authRoutes = require('./routes/authRoutes');
@@ -10,6 +11,7 @@ const devolucionRoutes = require('./routes/devolucionRoutes');
 const historialRoutes = require('./routes/historialRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const reporteRoutes = require('./routes/reporteRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
 
 const app = express();
 
@@ -41,8 +43,13 @@ app.use('/api/devoluciones', devolucionRoutes);
 app.use('/api/historial', historialRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reportes', reporteRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+app.use('/api', rutaNoEncontrada);
 app.use(rutaNoEncontrada);
+
 app.use(manejarErrores);
 
 module.exports = app;

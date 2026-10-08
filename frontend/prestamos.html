@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Préstamos — Mesas y Sillas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <nav class="barra-nav">
+    <a href="dashboard.html" class="barra-nav__marca">Mesas y Sillas</a>
+    <div class="barra-nav__enlaces">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="inventario.html">Inventario</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="prestamos.html" class="activo">Préstamos</a>
+      <a href="historial.html" id="enlace-historial">Historial</a>
+      <a href="usuarios.html" id="enlace-usuarios">Usuarios</a>
+    </div>
+    <div class="barra-nav__usuario">
+      <span id="usuario-actual"></span>
+      <button class="boton boton--secundario" id="boton-logout">Salir</button>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+    <h1>Préstamos</h1>
+
+    <div class="tarjeta" id="tarjeta-form-prestamo">
+      <h2>Registrar préstamo directo</h2>
+      <div id="mensaje-form"></div>
+      <form id="form-prestamo">
+        <div class="form-fila">
+          <div class="campo">
+            <label for="recurso_mesa">Mesas a prestar</label>
+            <input type="number" id="recurso_mesa" min="0" value="0" />
+          </div>
+          <div class="campo">
+            <label for="recurso_silla">Sillas a prestar</label>
+            <input type="number" id="recurso_silla" min="0" value="0" />
+          </div>
+        </div>
+        <div class="campo">
+          <label for="fecha_prevista">Fecha prevista de devolución</label>
+          <input type="date" id="fecha_prevista" required />
+        </div>
+        <div class="campo">
+          <label for="observaciones">Observaciones (opcional)</label>
+          <input type="text" id="observaciones" />
+        </div>
+        <button type="submit" class="boton">Registrar préstamo</button>
+      </form>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Préstamos</h2>
+      <div id="mensaje-lista"></div>
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Fecha prevista</th>
+              <th>Recursos</th>
+              <th>Estado</th>
+              <th id="columna-accion"></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-fondo" id="modal-fondo">
+    <div class="modal">
+      <h3>Registrar devolución</h3>
+      <div id="modal-campos"></div>
+      <div id="modal-mensaje"></div>
+      <div class="modal__acciones">
+        <button class="boton boton--secundario" id="modal-cancelar">Cancelar</button>
+        <button class="boton" id="modal-guardar">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/prestamos.js"></script>
+</body>
+</html>

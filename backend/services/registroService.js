@@ -1,8 +1,11 @@
 // Registro público: cualquier persona puede crear su propia cuenta,
 // siempre con el rol "usuario". Crear administradores sigue siendo
 // exclusivo del panel de usuarios (solo accesible para un admin ya logueado).
+// La cuenta queda inactiva para iniciar sesión hasta verificar el correo.
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { pool } = require('../db');
+const { enviarCorreoVerificacion } = require('./emailService');
 
 async function registrarCliente({ nombre, email, password }) {
   if (!nombre || !email || !password) {
@@ -27,15 +30,19 @@ async function registrarCliente({ nombre, email, password }) {
 
   const { rows: rolRows } = await pool.query("SELECT id FROM roles WHERE nombre = 'usuario'");
   const hash = await bcrypt.hash(password, 10);
+  const token = crypto.randomBytes(32).toString('hex');
+  const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
 
   const { rows } = await pool.query(
-    `INSERT INTO usuarios (nombre, email, password_hash, rol_id)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO usuarios (nombre, email, password_hash, rol_id, verificado, token_verificacion, token_expira)
+     VALUES ($1, $2, $3, $4, false, $5, $6)
      RETURNING id, nombre, email`,
-    [nombre.trim(), correo, hash, rolRows[0].id]
+    [nombre.trim(), correo, hash, rolRows[0].id, token, expira]
   );
 
-  return { ...rows[0], rol: 'usuario' };
+  await enviarCorreoVerificacion(rows[0].email, rows[0].nombre, token);
+
+  return { ...rows[0], rol: 'usuario', verificado: false };
 }
 
 module.exports = { registrarCliente };

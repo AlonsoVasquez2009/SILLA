@@ -21,6 +21,8 @@ async function solicitar(ruta, opciones = {}) {
     const mensaje = (cuerpo && cuerpo.error) || `Error ${respuesta.status}`;
     const error = new Error(mensaje);
     error.status = respuesta.status;
+    error.codigo = cuerpo && cuerpo.codigo;
+    error.pago = cuerpo && cuerpo.pago;
     throw error;
   }
 
@@ -34,6 +36,9 @@ const api = {
   logout: () => solicitar('/auth/logout', { method: 'POST' }),
   registrarCliente: (datos) => solicitar('/auth/registro', { method: 'POST', body: JSON.stringify(datos) }),
   me: () => solicitar('/auth/me'),
+  verificarCuenta: (token) => solicitar(`/auth/verificar?token=${encodeURIComponent(token)}`),
+  reenviarVerificacion: (email) =>
+    solicitar('/auth/reenviar-verificacion', { method: 'POST', body: JSON.stringify({ email }) }),
 
   // Inventario
   obtenerInventario: () => solicitar('/inventario'),
@@ -62,6 +67,10 @@ const api = {
   // Dashboard y reportes
   obtenerDashboard: () => solicitar('/dashboard'),
   obtenerReporte: (tipo) => solicitar(`/reportes/${tipo}`),
+
+  // Pagos (simulados)
+  crearPago: (datos) => solicitar('/pagos', { method: 'POST', body: JSON.stringify(datos) }),
+  listarPagos: () => solicitar('/pagos'),
 
   // Usuarios
   listarUsuarios: () => solicitar('/usuarios'),

@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+set -e
+echo "Arreglando backend/package.json (el anterior borró las dependencias ya instaladas)"
+
+cat > backend/package.json << 'EOF_PKG'
 {
   "name": "mesas-sillas-backend",
   "version": "1.0.0",
@@ -18,3 +23,14 @@
     "pg": "^8.23.1"
   }
 }
+EOF_PKG
+echo "✔ backend/package.json corregido"
+
+(cd backend && npm install)
+echo "✔ dependencias reinstaladas"
+
+node backend/migrar.js
+echo "✔ migración aplicada"
+
+echo ""
+echo "Ahora sí: cd backend && npm run dev"

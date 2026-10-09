@@ -12,6 +12,7 @@ const historialRoutes = require('./routes/historialRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const reporteRoutes = require('./routes/reporteRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
+const pagoRoutes = require('./routes/pagoRoutes');
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/historial', historialRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reportes', reporteRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/pagos', pagoRoutes);
 
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 

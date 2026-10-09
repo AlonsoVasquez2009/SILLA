@@ -75,6 +75,7 @@
               <th>Horario</th>
               <th>Recursos</th>
               <th>Estado</th>
+              <th>Pago</th>
               <th></th>
             </tr>
           </thead>
@@ -83,6 +84,46 @@
       </div>
     </div>
   </main>
+
+  <div class="modal-fondo" id="modal-pago-fondo">
+    <div class="modal">
+      <h3>Pagar reserva (simulado)</h3>
+      <p id="modal-pago-monto" style="color: var(--texto-suave); margin-top: -8px;"></p>
+      <div id="modal-pago-mensaje"></div>
+      <form id="form-pago">
+        <div class="campo">
+          <label for="pago-metodo">Método de pago</label>
+          <select id="pago-metodo">
+            <option value="tarjeta">Tarjeta</option>
+            <option value="transferencia">Transferencia</option>
+          </select>
+        </div>
+        <div id="campos-tarjeta">
+          <div class="campo">
+            <label for="pago-numero">Número de tarjeta</label>
+            <input type="text" id="pago-numero" placeholder="4111 1111 1111 1111" maxlength="19" />
+          </div>
+          <div class="form-fila">
+            <div class="campo">
+              <label for="pago-vencimiento">Vencimiento</label>
+              <input type="text" id="pago-vencimiento" placeholder="MM/AA" maxlength="5" />
+            </div>
+            <div class="campo">
+              <label for="pago-cvv">CVV</label>
+              <input type="text" id="pago-cvv" placeholder="123" maxlength="4" />
+            </div>
+          </div>
+          <p style="color: var(--texto-suave); font-size: 0.8rem;">
+            Pasarela simulada: cualquier tarjeta funciona, excepto una que termine en "0000" (simula un rechazo).
+          </p>
+        </div>
+        <div class="modal__acciones">
+          <button type="button" class="boton boton--secundario" id="modal-pago-cancelar">Cancelar</button>
+          <button type="submit" class="boton" id="modal-pago-pagar">Pagar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>

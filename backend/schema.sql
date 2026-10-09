@@ -7,13 +7,16 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 CREATE TABLE IF NOT EXISTS usuarios (
-  id             SERIAL PRIMARY KEY,
-  nombre         VARCHAR(100) NOT NULL,
-  email          VARCHAR(150) NOT NULL UNIQUE,
-  password_hash  VARCHAR(255) NOT NULL,
-  rol_id         INTEGER NOT NULL REFERENCES roles(id),
-  activo         BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+  id                  SERIAL PRIMARY KEY,
+  nombre              VARCHAR(100) NOT NULL,
+  email               VARCHAR(150) NOT NULL UNIQUE,
+  password_hash       VARCHAR(255) NOT NULL,
+  rol_id              INTEGER NOT NULL REFERENCES roles(id),
+  activo              BOOLEAN NOT NULL DEFAULT TRUE,
+  verificado          BOOLEAN NOT NULL DEFAULT FALSE,
+  token_verificacion  VARCHAR(255),
+  token_expira        TIMESTAMP,
+  created_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Inventario: fuente única de cantidades por recurso.
@@ -37,6 +40,7 @@ CREATE TABLE IF NOT EXISTS reservas (
   hora_fin     TIME NOT NULL,
   estado       VARCHAR(20) NOT NULL DEFAULT 'Confirmada'
                CHECK (estado IN ('Confirmada', 'Cancelada', 'Finalizada')),
+  pagado       BOOLEAN NOT NULL DEFAULT FALSE,
   created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
   CHECK (hora_fin > hora_inicio)
 );
@@ -96,6 +100,18 @@ CREATE TABLE IF NOT EXISTS historial (
   estado_anterior    VARCHAR(50),
   estado_posterior   VARCHAR(50),
   fecha              TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Pagos SIMULADOS asociados a una reserva (sin pasarela real).
+CREATE TABLE IF NOT EXISTS pagos (
+  id          SERIAL PRIMARY KEY,
+  reserva_id  INTEGER REFERENCES reservas(id),
+  usuario_id  INTEGER REFERENCES usuarios(id),
+  monto       NUMERIC(10,2) NOT NULL,
+  metodo      VARCHAR(50) NOT NULL,
+  estado      VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  referencia  VARCHAR(100),
+  creado_en   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Índices para las consultas más frecuentes.

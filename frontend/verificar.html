@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificar cuenta — Mesas y Sillas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <div class="pantalla-centrada">
+    <div class="contenedor contenedor--angosto">
+      <div class="tarjeta">
+        <h1>Verificación de cuenta</h1>
+        <div id="resultado">
+          <p style="color: var(--texto-suave);">Verificando tu correo…</p>
+        </div>
+
+        <div id="bloque-reenviar" style="display: none; margin-top: var(--espacio-md);">
+          <p style="color: var(--texto-suave); font-size: 0.9rem;">¿El enlace venció? Escribe tu correo y te enviamos uno nuevo.</p>
+          <div class="campo">
+            <label for="email-reenviar">Correo</label>
+            <input type="email" id="email-reenviar" required />
+          </div>
+          <button class="boton boton--ancho" id="boton-reenviar">Reenviar verificación</button>
+          <div id="mensaje-reenviar"></div>
+        </div>
+
+        <p style="color: var(--texto-suave); font-size: 0.85rem; margin-top: var(--espacio-md); margin-bottom: 0;">
+          <a href="index.html">Ir a iniciar sesión</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const resultado = document.getElementById('resultado');
+    const bloqueReenviar = document.getElementById('bloque-reenviar');
+    const mensajeReenviar = document.getElementById('mensaje-reenviar');
+
+    (async () => {
+      const token = new URLSearchParams(window.location.search).get('token');
+
+      if (!token) {
+        resultado.innerHTML = '<div class="mensaje mensaje--error">Falta el token de verificación en el enlace.</div>';
+        bloqueReenviar.style.display = 'block';
+        return;
+      }
+
+      try {
+        const { mensaje } = await api.verificarCuenta(token);
+        resultado.innerHTML = `<div class="mensaje mensaje--exito">${mensaje}</div>`;
+      } catch (error) {
+        resultado.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
+        bloqueReenviar.style.display = 'block';
+      }
+    })();
+
+    document.getElementById('boton-reenviar').addEventListener('click', async () => {
+      mensajeReenviar.innerHTML = '';
+      const email = document.getElementById('email-reenviar').value.trim();
+      if (!email) return;
+
+      try {
+        const { mensaje } = await api.reenviarVerificacion(email);
+        mensajeReenviar.innerHTML = `<div class="mensaje mensaje--exito">${mensaje}</div>`;
+      } catch (error) {
+        mensajeReenviar.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

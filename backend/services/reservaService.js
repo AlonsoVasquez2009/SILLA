@@ -64,7 +64,7 @@ async function crearReserva(usuarioId, { fecha, hora_inicio, hora_fin, items }) 
     const { rows: reservaRows } = await cliente.query(
       `INSERT INTO reservas (usuario_id, fecha, hora_inicio, hora_fin, estado)
        VALUES ($1, $2, $3, $4, 'Confirmada')
-       RETURNING id, usuario_id, fecha, hora_inicio, hora_fin, estado, created_at`,
+       RETURNING id, usuario_id, fecha, hora_inicio, hora_fin, estado, pagado, created_at`,
       [usuarioId, fecha, hora_inicio, hora_fin]
     );
     const reserva = reservaRows[0];
@@ -108,7 +108,7 @@ async function listarReservas(usuario) {
 
   const { rows } = await pool.query(
     `SELECT r.id, r.usuario_id, u.nombre AS usuario_nombre, r.fecha, r.hora_inicio,
-            r.hora_fin, r.estado, r.created_at,
+            r.hora_fin, r.estado, r.pagado, r.created_at,
             COALESCE(
               json_agg(
                 json_build_object('recurso_id', dr.recurso_id, 'nombre', rec.nombre, 'cantidad', dr.cantidad)

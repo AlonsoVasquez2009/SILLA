@@ -17,7 +17,10 @@ function manejarErrores(err, req, res, next) {
     console.error(err);
   }
 
-  res.status(estado).json({ error: mensaje });
+  const cuerpo = { error: mensaje };
+  if (err.codigo) cuerpo.codigo = err.codigo;
+  if (err.pago) cuerpo.pago = err.pago;
+  res.status(estado).json(cuerpo);
 }
 
 module.exports = { rutaNoEncontrada, manejarErrores };

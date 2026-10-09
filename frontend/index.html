@@ -61,7 +61,14 @@
         await api.login(email, password);
         window.location.href = 'inicio.html';
       } catch (error) {
-        mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
+        if (error.codigo === 'CUENTA_NO_VERIFICADA') {
+          mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>
+            <p style="font-size: 0.85rem; margin-top: 4px;">
+              <a href="verificar.html">Reenviar correo de verificación</a>
+            </p>`;
+        } else {
+          mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
+        }
         boton.disabled = false;
         boton.textContent = 'Iniciar sesión';
       }

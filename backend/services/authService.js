@@ -6,7 +6,7 @@ const { pool } = require('../db');
 // Si fallan, lanza un error genérico para no revelar si el correo existe.
 async function iniciarSesion(email, password) {
   const consulta = `
-    SELECT u.id, u.nombre, u.email, u.password_hash, u.activo, r.nombre AS rol
+    SELECT u.id, u.nombre, u.email, u.password_hash, u.activo, u.verificado, r.nombre AS rol
     FROM usuarios u
     JOIN roles r ON r.id = u.rol_id
     WHERE u.email = $1
@@ -19,6 +19,13 @@ async function iniciarSesion(email, password) {
   if (!passwordValida || !usuario.activo) {
     const error = new Error('Correo o contraseña incorrectos');
     error.status = 401;
+    throw error;
+  }
+
+  if (!usuario.verificado) {
+    const error = new Error('Debes verificar tu correo antes de iniciar sesión');
+    error.status = 403;
+    error.codigo = 'CUENTA_NO_VERIFICADA';
     throw error;
   }
 

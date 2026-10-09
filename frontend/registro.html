@@ -61,8 +61,10 @@
       const password = document.getElementById('password').value;
 
       try {
-        await api.registrarCliente({ nombre, email, password });
-        window.location.href = 'inicio.html';
+        const { mensaje: texto } = await api.registrarCliente({ nombre, email, password });
+        form.reset();
+        form.style.display = 'none';
+        mensaje.innerHTML = `<div class="mensaje mensaje--exito">${texto}</div>`;
       } catch (error) {
         mensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
         boton.disabled = false;

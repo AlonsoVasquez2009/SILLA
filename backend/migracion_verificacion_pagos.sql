@@ -1,0 +1,15 @@
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS verificado BOOLEAN DEFAULT false;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS token_verificacion VARCHAR(255);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS token_expira TIMESTAMP;
+ALTER TABLE reservas ADD COLUMN IF NOT EXISTS pagado BOOLEAN DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS pagos (
+  id SERIAL PRIMARY KEY,
+  reserva_id INTEGER REFERENCES reservas(id),
+  usuario_id INTEGER REFERENCES usuarios(id),
+  monto NUMERIC(10,2) NOT NULL,
+  metodo VARCHAR(50) NOT NULL,
+  estado VARCHAR(20) DEFAULT 'pendiente',
+  referencia VARCHAR(100),
+  creado_en TIMESTAMP DEFAULT NOW()
+);

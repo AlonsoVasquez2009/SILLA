@@ -58,7 +58,17 @@
           <option value="Reserva cancelada">Reserva cancelada</option>
           <option value="Préstamo creado">Préstamo creado</option>
           <option value="Devolución registrada">Devolución registrada</option>
+          <option value="Préstamo marcado vencido">Préstamo marcado vencido</option>
         </select>
+        <select id="filtro-usuario">
+          <option value="">Todos los usuarios</option>
+        </select>
+        <select id="filtro-recurso">
+          <option value="">Todos los recursos</option>
+        </select>
+        <input type="date" id="filtro-desde" title="Desde" />
+        <input type="date" id="filtro-hasta" title="Hasta" />
+        <button type="button" class="boton boton--secundario" id="boton-limpiar-filtros">Limpiar filtros</button>
       </div>
       <div id="mensaje-historial"></div>
       <div class="tabla-scroll">

@@ -55,4 +55,33 @@ async function generarReporte(tipo) {
   return funcion();
 }
 
-module.exports = { generarReporte };
+// Convierte un arreglo de objetos planos a texto CSV. Los campos que son
+// objetos o arreglos (como 'items') se aplanan a texto separado por " | ".
+function convertirACSV(filas) {
+  if (!filas || filas.length === 0) return '';
+
+  const columnas = Object.keys(filas[0]);
+
+  function celda(valor) {
+    let texto;
+    if (valor === null || valor === undefined) {
+      texto = '';
+    } else if (typeof valor === 'object') {
+      texto = JSON.stringify(valor).replace(/"/g, "'");
+    } else {
+      texto = String(valor);
+    }
+    return `"${texto.replace(/"/g, '""')}"`;
+  }
+
+  const encabezado = columnas.map(celda).join(',');
+  const lineas = filas.map((fila) => columnas.map((c) => celda(fila[c])).join(','));
+  return [encabezado, ...lineas].join('\n');
+}
+
+async function generarReporteCSV(tipo) {
+  const filas = await generarReporte(tipo);
+  return convertirACSV(filas);
+}
+
+module.exports = { generarReporte, generarReporteCSV };

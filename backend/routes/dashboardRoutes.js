@@ -1,9 +1,9 @@
 const express = require('express');
 const { obtener } = require('../controllers/dashboardController');
-const { requerirSesion } = require('../middleware/auth');
+const { requerirRol } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', requerirSesion, obtener);
+router.get('/', requerirRol('admin'), obtener);
 
 module.exports = router;

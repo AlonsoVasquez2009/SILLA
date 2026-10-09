@@ -170,6 +170,18 @@ async function cancelarReserva(reservaId, usuario) {
       throw error;
     }
 
+    // Un usuario normal no puede cancelar una reserva cuya fecha/hora ya pasó.
+    // El admin sí puede, para poder hacer ajustes manuales si hace falta.
+    if (usuario.rol !== 'admin') {
+      const fechaReserva = reserva.fecha.toISOString().slice(0, 10);
+      const inicioReserva = new Date(`${fechaReserva}T${reserva.hora_inicio}`);
+      if (inicioReserva <= new Date()) {
+        const error = new Error('No se puede cancelar una reserva cuya fecha u hora ya pasó');
+        error.status = 409;
+        throw error;
+      }
+    }
+
     const { rows: detalles } = await cliente.query(
       `SELECT recurso_id, cantidad FROM detalle_reservas WHERE reserva_id = $1`,
       [reservaId]

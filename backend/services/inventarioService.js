@@ -30,10 +30,12 @@ async function actualizarTotal(id, nuevoTotal) {
     throw error;
   }
 
-  const comprometido = recurso.reservados + recurso.prestados;
+  // Lo reservado a futuro ya no bloquea el total: solo lo que está
+  // físicamente prestado ahora mismo compromete el inventario de verdad.
+  const comprometido = recurso.prestados;
   if (nuevoTotal < comprometido) {
     const error = new Error(
-      `No se puede bajar el total a ${nuevoTotal}: hay ${comprometido} unidades reservadas o prestadas`
+      `No se puede bajar el total a ${nuevoTotal}: hay ${comprometido} unidades prestadas`
     );
     error.status = 409;
     throw error;

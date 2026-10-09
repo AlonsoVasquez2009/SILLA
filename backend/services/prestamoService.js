@@ -56,10 +56,11 @@ async function crearPrestamo(usuarioId, { reserva_id, items, fecha_prevista, obs
       );
       itemsFinales = detalles;
 
-      // Mueve cada recurso de "reservados" a "prestados".
+      // La reserva nunca descontó de disponibles (eso ahora se valida
+      // por ventana de fecha), así que aquí sí sale de verdad del stock físico.
       for (const d of itemsFinales) {
         await cliente.query(
-          `UPDATE recursos SET reservados = reservados - $1, prestados = prestados + $1 WHERE id = $2`,
+          `UPDATE recursos SET disponibles = disponibles - $1, prestados = prestados + $1 WHERE id = $2`,
           [d.cantidad, d.recurso_id]
         );
       }

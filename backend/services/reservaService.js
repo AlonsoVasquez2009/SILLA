@@ -53,7 +53,7 @@ async function crearReserva(usuarioId, { fecha, hora_inicio, hora_fin, items }) 
     // los mismos recursos en distinto orden, evita un interbloqueo (deadlock).
     const idsOrdenados = [...recursoIds].sort((a, b) => a - b);
     const { rows: recursos } = await cliente.query(
-      `SELECT id, nombre, disponibles FROM recursos WHERE id = ANY($1) FOR UPDATE`,
+      `SELECT id, nombre, total, prestados FROM recursos WHERE id = ANY($1) FOR UPDATE`,
       [idsOrdenados]
     );
 
@@ -63,13 +63,32 @@ async function crearReserva(usuarioId, { fecha, hora_inicio, hora_fin, items }) 
       throw error;
     }
 
-    const disponiblesPorId = new Map(recursos.map((r) => [r.id, r]));
+    const recursoPorId = new Map(recursos.map((r) => [r.id, r]));
+
+    // La disponibilidad ya no es un pool global: dos reservas para fechas
+    // que no se crucen pueden compartir el mismo stock. Solo compiten entre
+    // si las reservas confirmadas de ese recurso caen dentro de un margen
+    // de 3 días antes o después de la fecha pedida. Lo prestado ahora mismo
+    // sí cuenta siempre, porque está físicamente fuera sin importar la fecha.
+    const { rows: comprometidos } = await cliente.query(
+      `SELECT dr.recurso_id, COALESCE(SUM(dr.cantidad), 0) AS cantidad
+       FROM detalle_reservas dr
+       JOIN reservas r ON r.id = dr.reserva_id
+       WHERE r.estado = 'Confirmada'
+         AND dr.recurso_id = ANY($1)
+         AND r.fecha BETWEEN $2::date - 3 AND $2::date + 3
+       GROUP BY dr.recurso_id`,
+      [idsOrdenados, fecha]
+    );
+    const comprometidoPorId = new Map(comprometidos.map((c) => [c.recurso_id, Number(c.cantidad)]));
 
     for (const item of items) {
-      const recurso = disponiblesPorId.get(item.recurso_id);
-      if (item.cantidad > recurso.disponibles) {
+      const recurso = recursoPorId.get(item.recurso_id);
+      const yaComprometido = (comprometidoPorId.get(item.recurso_id) || 0) + recurso.prestados;
+      const disponibleEnVentana = recurso.total - yaComprometido;
+      if (item.cantidad > disponibleEnVentana) {
         const error = new Error(
-          `No hay suficiente disponibilidad de "${recurso.nombre}": quedan ${recurso.disponibles}`
+          `No hay suficiente disponibilidad de "${recurso.nombre}" para esa fecha (margen de 3 días): quedan ${Math.max(disponibleEnVentana, 0)}`
         );
         error.status = 409;
         throw error;
@@ -91,13 +110,8 @@ async function crearReserva(usuarioId, { fecha, hora_inicio, hora_fin, items }) 
         [reserva.id, item.recurso_id, item.cantidad]
       );
 
-      await cliente.query(
-        `UPDATE recursos
-         SET disponibles = disponibles - $1, reservados = reservados + $1
-         WHERE id = $2`,
-        [item.cantidad, item.recurso_id]
-      );
-
+      // Ya no se toca disponibles/reservados aquí: la reserva compromete
+      // stock solo dentro de su ventana de fecha, calculada dinámicamente.
       await cliente.query(
         `INSERT INTO historial (usuario_id, tipo_operacion, recurso_id, cantidad, estado_anterior, estado_posterior)
          VALUES ($1, 'Reserva creada', $2, $3, NULL, 'Confirmada')`,
@@ -188,13 +202,8 @@ async function cancelarReserva(reservaId, usuario) {
     );
 
     for (const d of detalles) {
-      await cliente.query(
-        `UPDATE recursos
-         SET disponibles = disponibles + $1, reservados = reservados - $1
-         WHERE id = $2`,
-        [d.cantidad, d.recurso_id]
-      );
-
+      // No hay nada que revertir en disponibles/reservados: la reserva
+      // nunca los toco, solo liberaba espacio dentro de su ventana de fecha.
       await cliente.query(
         `INSERT INTO historial (usuario_id, tipo_operacion, recurso_id, cantidad, estado_anterior, estado_posterior)
          VALUES ($1, 'Reserva cancelada', $2, $3, 'Confirmada', 'Cancelada')`,

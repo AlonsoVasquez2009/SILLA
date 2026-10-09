@@ -6,18 +6,30 @@ async function obtenerResumen() {
   await marcarPrestamosVencidos();
 
   const { rows: recursos } = await pool.query(
-    `SELECT tipo, SUM(total) AS total, SUM(disponibles) AS disponibles,
-            SUM(reservados) AS reservados, SUM(prestados) AS prestados
+    `SELECT tipo, SUM(total) AS total, SUM(disponibles) AS disponibles, SUM(prestados) AS prestados
      FROM recursos
      GROUP BY tipo`
   );
+
+  // "Reservado" ya no es un contador fijo: se calcula como la suma de
+  // reservas confirmadas de hoy en adelante (independiente de la ventana
+  // de 3 días, que solo aplica para decidir si una reserva nueva cabe).
+  const { rows: reservadoPorTipo } = await pool.query(
+    `SELECT rec.tipo, COALESCE(SUM(dr.cantidad), 0) AS reservado
+     FROM detalle_reservas dr
+     JOIN reservas r ON r.id = dr.reserva_id
+     JOIN recursos rec ON rec.id = dr.recurso_id
+     WHERE r.estado = 'Confirmada' AND r.fecha >= CURRENT_DATE
+     GROUP BY rec.tipo`
+  );
+  const reservadoMap = new Map(reservadoPorTipo.map((r) => [r.tipo, Number(r.reservado)]));
 
   const porTipo = { mesa: null, silla: null };
   for (const r of recursos) {
     porTipo[r.tipo] = {
       total: Number(r.total),
       disponibles: Number(r.disponibles),
-      reservados: Number(r.reservados),
+      reservados: reservadoMap.get(r.tipo) || 0,
       prestados: Number(r.prestados),
     };
   }

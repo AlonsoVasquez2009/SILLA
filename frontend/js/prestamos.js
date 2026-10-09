@@ -20,11 +20,58 @@
   let idMesa = null;
   let idSilla = null;
   let prestamoEnDevolucion = null;
+  let reservasConfirmadas = [];
 
   async function cargarIdsRecursos() {
     const { recursos } = await api.obtenerInventario();
     idMesa = recursos.find((r) => r.tipo === 'mesa')?.id;
     idSilla = recursos.find((r) => r.tipo === 'silla')?.id;
+  }
+
+  async function cargarReservasConfirmadas() {
+    const selectReserva = document.getElementById('select_reserva');
+    if (!selectReserva) return;
+
+    try {
+      const { reservas } = await api.listarReservas();
+      reservasConfirmadas = reservas.filter((r) => r.estado === 'Confirmada');
+
+      reservasConfirmadas.forEach((r) => {
+        const resumenItems = r.items.map((i) => `${i.cantidad} ${i.nombre}`).join(', ');
+        const opcion = document.createElement('option');
+        opcion.value = r.id;
+        opcion.textContent = `${r.usuario_nombre} — ${r.fecha.slice(0, 10)} ${r.hora_inicio} — ${resumenItems}`;
+        selectReserva.appendChild(opcion);
+      });
+    } catch (error) {
+      mensajeForm.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
+    }
+  }
+
+  function alCambiarReservaSeleccionada() {
+    const selectReserva = document.getElementById('select_reserva');
+    const camposDirecto = document.getElementById('campos-directo');
+    const resumenReserva = document.getElementById('resumen-reserva');
+    if (!selectReserva) return;
+
+    const reservaId = Number(selectReserva.value) || null;
+    const reserva = reservasConfirmadas.find((r) => r.id === reservaId);
+
+    if (reserva) {
+      camposDirecto.style.display = 'none';
+      document.getElementById('recurso_mesa').value = 0;
+      document.getElementById('recurso_silla').value = 0;
+
+      const resumenItems = reserva.items.map((i) => `${i.cantidad} ${i.nombre}`).join(', ');
+      resumenReserva.style.display = '';
+      resumenReserva.innerHTML =
+        `<div class="mensaje">Recursos de la reserva: ${resumenItems || '—'} ` +
+        `(${reserva.usuario_nombre}, ${reserva.fecha.slice(0, 10)} ${reserva.hora_inicio})</div>`;
+    } else {
+      camposDirecto.style.display = '';
+      resumenReserva.style.display = 'none';
+      resumenReserva.innerHTML = '';
+    }
   }
 
   function claseEstado(estado) {
@@ -112,28 +159,44 @@
   });
 
   const form = document.getElementById('form-prestamo');
+  const selectReserva = document.getElementById('select_reserva');
+  if (selectReserva) {
+    selectReserva.addEventListener('change', alCambiarReservaSeleccionada);
+  }
+
   if (form) {
     form.addEventListener('submit', async (evento) => {
       evento.preventDefault();
       mensajeForm.innerHTML = '';
 
-      const cantidadMesas = Number(document.getElementById('recurso_mesa').value) || 0;
-      const cantidadSillas = Number(document.getElementById('recurso_silla').value) || 0;
       const fecha_prevista = document.getElementById('fecha_prevista').value;
       const observaciones = document.getElementById('observaciones').value.trim();
+      const reservaId = selectReserva ? Number(selectReserva.value) || null : null;
 
-      const items = [];
-      if (cantidadMesas > 0) items.push({ recurso_id: idMesa, cantidad: cantidadMesas });
-      if (cantidadSillas > 0) items.push({ recurso_id: idSilla, cantidad: cantidadSillas });
+      let datosPrestamo;
 
-      if (items.length === 0) {
-        mensajeForm.innerHTML = '<div class="mensaje mensaje--error">Indica al menos una mesa o silla.</div>';
-        return;
+      if (reservaId) {
+        datosPrestamo = { reserva_id: reservaId, fecha_prevista, observaciones };
+      } else {
+        const cantidadMesas = Number(document.getElementById('recurso_mesa').value) || 0;
+        const cantidadSillas = Number(document.getElementById('recurso_silla').value) || 0;
+
+        const items = [];
+        if (cantidadMesas > 0) items.push({ recurso_id: idMesa, cantidad: cantidadMesas });
+        if (cantidadSillas > 0) items.push({ recurso_id: idSilla, cantidad: cantidadSillas });
+
+        if (items.length === 0) {
+          mensajeForm.innerHTML = '<div class="mensaje mensaje--error">Indica al menos una mesa o silla.</div>';
+          return;
+        }
+        datosPrestamo = { items, fecha_prevista, observaciones };
       }
 
       try {
-        await api.crearPrestamo({ items, fecha_prevista, observaciones });
+        await api.crearPrestamo(datosPrestamo);
         form.reset();
+        if (selectReserva) alCambiarReservaSeleccionada();
+        await cargarReservasConfirmadas();
         await cargarPrestamos();
         mensajeForm.innerHTML = '<div class="mensaje mensaje--exito">Préstamo registrado.</div>';
       } catch (error) {
@@ -143,5 +206,6 @@
   }
 
   await cargarIdsRecursos();
+  await cargarReservasConfirmadas();
   await cargarPrestamos();
 })();

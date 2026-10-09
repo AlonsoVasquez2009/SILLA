@@ -33,7 +33,14 @@
       <h2>Registrar préstamo directo</h2>
       <div id="mensaje-form"></div>
       <form id="form-prestamo">
-        <div class="form-fila">
+        <div class="campo">
+          <label for="select_reserva">Generar desde una reserva confirmada (opcional)</label>
+          <select id="select_reserva">
+            <option value="">— Préstamo directo, sin reserva —</option>
+          </select>
+        </div>
+        <div id="resumen-reserva" style="display: none;"></div>
+        <div class="form-fila" id="campos-directo">
           <div class="campo">
             <label for="recurso_mesa">Mesas a prestar</label>
             <input type="number" id="recurso_mesa" min="0" value="0" />

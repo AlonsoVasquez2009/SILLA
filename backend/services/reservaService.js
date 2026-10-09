@@ -9,6 +9,21 @@ async function crearReserva(usuarioId, { fecha, hora_inicio, hora_fin, items }) 
     error.status = 400;
     throw error;
   }
+
+  // La fecha de la reserva no puede ser anterior a hoy.
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (fecha < hoy) {
+    const error = new Error('La fecha de la reserva no puede ser anterior a hoy');
+    error.status = 400;
+    throw error;
+  }
+
+  // La hora de fin debe ser posterior a la hora de inicio.
+  if (hora_fin <= hora_inicio) {
+    const error = new Error('La hora de fin debe ser posterior a la hora de inicio');
+    error.status = 400;
+    throw error;
+  }
   if (!Array.isArray(items) || items.length === 0) {
     const error = new Error('Debes indicar al menos un recurso');
     error.status = 400;

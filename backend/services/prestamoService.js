@@ -151,7 +151,30 @@ async function crearPrestamo(usuarioId, { reserva_id, items, fecha_prevista, obs
   }
 }
 
+// Pasa a 'Vencido' cualquier préstamo activo o parcialmente devuelto cuya
+// fecha prevista ya pasó. Se llama antes de cada lectura relevante en vez
+// de depender de un proceso programado aparte.
+async function marcarPrestamosVencidos() {
+  const { rows } = await pool.query(
+    `SELECT id, usuario_id, estado FROM prestamos
+     WHERE estado IN ('Activo', 'Parcialmente devuelto') AND fecha_prevista < CURRENT_DATE`
+  );
+
+  for (const p of rows) {
+    await pool.query(`UPDATE prestamos SET estado = 'Vencido' WHERE id = $1`, [p.id]);
+    await pool.query(
+      `INSERT INTO historial (usuario_id, tipo_operacion, estado_anterior, estado_posterior)
+       VALUES ($1, 'Préstamo marcado vencido', $2, 'Vencido')`,
+      [p.usuario_id, p.estado]
+    );
+  }
+
+  return rows.length;
+}
+
 async function listarPrestamos(usuario) {
+  await marcarPrestamosVencidos();
+
   const esAdmin = usuario.rol === 'admin';
   const condicion = esAdmin ? '' : 'WHERE p.usuario_id = $1';
   const parametros = esAdmin ? [] : [usuario.id];
@@ -179,4 +202,4 @@ async function listarPrestamos(usuario) {
   return rows;
 }
 
-module.exports = { crearPrestamo, listarPrestamos };
+module.exports = { crearPrestamo, listarPrestamos, marcarPrestamosVencidos };

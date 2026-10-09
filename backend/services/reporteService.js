@@ -1,7 +1,10 @@
 // Reportes de solo lectura, construidos sobre las tablas ya existentes.
 const { pool } = require('../db');
+const { marcarPrestamosVencidos } = require('./prestamoService');
 
 async function prestamosVencidos() {
+  await marcarPrestamosVencidos();
+
   const { rows } = await pool.query(
     `SELECT p.id, p.usuario_id, u.nombre AS usuario_nombre, p.fecha_prestamo,
             p.fecha_prevista, p.estado,
@@ -19,7 +22,7 @@ async function prestamosVencidos() {
      JOIN usuarios u ON u.id = p.usuario_id
      LEFT JOIN detalle_prestamos dp ON dp.prestamo_id = p.id
      LEFT JOIN recursos rec ON rec.id = dp.recurso_id
-     WHERE p.estado IN ('Activo', 'Parcialmente devuelto') AND p.fecha_prevista < CURRENT_DATE
+     WHERE p.estado = 'Vencido'
      GROUP BY p.id, u.nombre
      ORDER BY p.fecha_prevista ASC`
   );

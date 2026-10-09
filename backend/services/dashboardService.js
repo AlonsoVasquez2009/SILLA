@@ -1,7 +1,10 @@
 // Junta datos de varias tablas para la vista resumen del dashboard.
 const { pool } = require('../db');
+const { marcarPrestamosVencidos } = require('./prestamoService');
 
 async function obtenerResumen() {
+  await marcarPrestamosVencidos();
+
   const { rows: recursos } = await pool.query(
     `SELECT tipo, SUM(total) AS total, SUM(disponibles) AS disponibles,
             SUM(reservados) AS reservados, SUM(prestados) AS prestados
@@ -28,8 +31,7 @@ async function obtenerResumen() {
   );
 
   const { rows: prestamosVencidos } = await pool.query(
-    `SELECT COUNT(*) AS n FROM prestamos
-     WHERE estado IN ('Activo', 'Parcialmente devuelto') AND fecha_prevista < CURRENT_DATE`
+    `SELECT COUNT(*) AS n FROM prestamos WHERE estado = 'Vencido'`
   );
 
   const { rows: devolucionesPendientes } = await pool.query(

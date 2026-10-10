@@ -166,7 +166,7 @@
       await api.crearPago(datos);
       modalPagoFondo.classList.remove('visible');
       await cargarReservas();
-      mensajeLista.innerHTML = '<div class="mensaje mensaje--exito">Pago aprobado (simulado).</div>';
+      mensajeLista.innerHTML = '<div class="mensaje mensaje--exito">Pago aprobado (simulado). Te enviamos la factura por correo.</div>';
     } catch (error) {
       modalPagoMensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
     } finally {

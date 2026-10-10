@@ -2,6 +2,7 @@
 // Sirve para completar el flujo de cobro de una reserva en el sistema.
 const crypto = require('crypto');
 const { pool } = require('../db');
+const { generarYEnviarFactura } = require('./facturaService');
 
 // Precios simulados por recurso (unidad), usados solo para calcular el monto.
 const PRECIO_POR_TIPO = { mesa: 5, silla: 1 };
@@ -135,7 +136,9 @@ async function procesarPago(usuario, datos) {
     error.pago = pago;
     throw error;
   }
-  return pago;
+
+  const factura = await generarYEnviarFactura(pago);
+  return { ...pago, factura };
 }
 
 async function listarPagos(usuario) {

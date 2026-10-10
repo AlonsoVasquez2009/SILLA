@@ -65,4 +65,53 @@ async function enviarCorreoVerificacion(destino, nombre, token) {
   return { simulado: false };
 }
 
-module.exports = { enviarCorreoVerificacion };
+async function enviarCorreoFactura(destino, nombre, factura) {
+  const filas = factura.items
+    .map((i) => `<tr><td>${i.nombre}</td><td style="text-align:center;">${i.cantidad}</td></tr>`)
+    .join('');
+
+  const asunto = `Factura ${factura.numero} — Mesas y Sillas`;
+  const textoPlano = `Hola ${nombre},\n\nTu pago fue aprobado. Factura simulada ${factura.numero} por $${Number(factura.monto).toFixed(2)}, método ${factura.metodo}, referencia ${factura.referencia}.\n\nEsta factura es simulada y no constituye un documento tributario válido ante el Ministerio de Hacienda.`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2 style="color: #7a4a2a;">Mesas y Sillas</h2>
+      <p>Hola ${nombre},</p>
+      <p>Tu pago fue aprobado. Aquí tienes el detalle:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tr><td><strong>Factura</strong></td><td>${factura.numero}</td></tr>
+        <tr><td><strong>Fecha reservada</strong></td><td>${factura.fecha}</td></tr>
+        <tr><td><strong>Método de pago</strong></td><td>${factura.metodo}</td></tr>
+        <tr><td><strong>Referencia</strong></td><td>${factura.referencia}</td></tr>
+        <tr><td><strong>Total</strong></td><td>$${Number(factura.monto).toFixed(2)}</td></tr>
+      </table>
+      <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #ddd; font-size: 14px;">
+        <thead><tr><th style="text-align:left;">Recurso</th><th>Cantidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p style="font-size: 12px; color: #999; margin-top: 24px;">
+        Esta es una factura simulada generada por el sistema; no es un documento tributario
+        válido ante el Ministerio de Hacienda de El Salvador.
+      </p>
+    </div>`;
+
+  const transporte = obtenerTransportador();
+
+  if (!transporte) {
+    console.log('--------------------------------------------------');
+    console.log('[EMAIL] No hay SMTP configurado (ver backend/.env).');
+    console.log(`[EMAIL] Factura simulada ${factura.numero} para ${destino} por $${factura.monto}`);
+    console.log('--------------------------------------------------');
+    return { simulado: true };
+  }
+
+  await transporte.sendMail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: destino,
+    subject: asunto,
+    text: textoPlano,
+    html,
+  });
+  return { simulado: false };
+}
+
+module.exports = { enviarCorreoVerificacion, enviarCorreoFactura };

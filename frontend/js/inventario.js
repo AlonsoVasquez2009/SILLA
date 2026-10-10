@@ -29,7 +29,6 @@
           <td>${r.nombre}</td>
           <td>${r.total}</td>
           <td>${r.disponibles}</td>
-          <td>${r.reservados}</td>
           <td>${r.prestados}</td>
           <td>${esAdmin ? `<button class="boton boton--secundario" data-id="${r.id}" data-nombre="${r.nombre}" data-total="${r.total}">Editar</button>` : ''}</td>
         </tr>`

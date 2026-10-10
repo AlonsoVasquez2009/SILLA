@@ -33,8 +33,8 @@ async function crearInventarioInicial() {
 
   for (const r of recursos) {
     await pool.query(
-      `INSERT INTO recursos (nombre, tipo, total, disponibles, reservados, prestados)
-       VALUES ($1, $2, $3, $3, 0, 0)
+      `INSERT INTO recursos (nombre, tipo, total, disponibles, prestados)
+       VALUES ($1, $2, $3, $3, 0)
        ON CONFLICT (nombre) DO NOTHING`,
       [r.nombre, r.tipo, r.total]
     );

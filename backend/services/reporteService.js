@@ -31,7 +31,7 @@ async function prestamosVencidos() {
 
 async function inventarioActual() {
   const { rows } = await pool.query(
-    `SELECT id, nombre, tipo, total, disponibles, reservados, prestados
+    `SELECT id, nombre, tipo, total, disponibles, prestados
      FROM recursos
      ORDER BY tipo, nombre`
   );

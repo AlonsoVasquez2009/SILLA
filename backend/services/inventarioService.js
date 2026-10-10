@@ -4,7 +4,7 @@ const { pool } = require('../db');
 
 async function listarInventario() {
   const { rows } = await pool.query(
-    `SELECT id, nombre, tipo, total, disponibles, reservados, prestados
+    `SELECT id, nombre, tipo, total, disponibles, prestados
      FROM recursos
      ORDER BY tipo, nombre`
   );
@@ -47,7 +47,7 @@ async function actualizarTotal(id, nuevoTotal) {
     `UPDATE recursos
      SET total = $1, disponibles = $2
      WHERE id = $3
-     RETURNING id, nombre, tipo, total, disponibles, reservados, prestados`,
+     RETURNING id, nombre, tipo, total, disponibles, prestados`,
     [nuevoTotal, nuevoDisponibles, id]
   );
 

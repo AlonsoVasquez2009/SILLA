@@ -20,16 +20,16 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 -- Inventario: fuente única de cantidades por recurso.
--- La suma disponibles + reservados + prestados debe igualar total.
+-- La suma disponibles + prestados debe igualar total. Lo "reservado"
+-- ya no es un contador fijo: se calcula por fecha (ver reservaService.js).
 CREATE TABLE IF NOT EXISTS recursos (
   id           SERIAL PRIMARY KEY,
   nombre       VARCHAR(50) NOT NULL UNIQUE,
   tipo         VARCHAR(10) NOT NULL CHECK (tipo IN ('mesa', 'silla')),
   total        INTEGER NOT NULL CHECK (total >= 0),
   disponibles  INTEGER NOT NULL CHECK (disponibles >= 0),
-  reservados   INTEGER NOT NULL CHECK (reservados >= 0),
   prestados    INTEGER NOT NULL CHECK (prestados >= 0),
-  CHECK (disponibles + reservados + prestados = total)
+  CHECK (disponibles + prestados = total)
 );
 
 CREATE TABLE IF NOT EXISTS reservas (

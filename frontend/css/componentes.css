@@ -68,3 +68,42 @@
     transition: none !important;
   }
 }
+
+/* Celulares angostos (320-480px): afina lo que el breakpoint de 640px
+   deja todavía un poco apretado. */
+@media (max-width: 480px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.2rem; }
+
+  .barra-nav {
+    padding: var(--espacio-sm) var(--espacio-md);
+  }
+  .barra-nav__enlaces {
+    gap: var(--espacio-md);
+  }
+  .barra-nav__usuario {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .resumen-grid {
+    grid-template-columns: 1fr;
+  }
+  .resumen-grid .numero {
+    font-size: 1.8rem;
+  }
+
+  .tarjeta {
+    padding: var(--espacio-md);
+  }
+
+  th, td {
+    padding: 9px 10px;
+    font-size: 0.82rem;
+  }
+
+  .boton {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+}

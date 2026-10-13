@@ -16,6 +16,11 @@ const pagoRoutes = require('./routes/pagoRoutes');
 
 const app = express();
 
+// Render (y la mayoría de hosts) ponen la app detrás de un proxy/balanceador.
+// Sin esto, Express no detecta HTTPS y las cookies 'secure' de la sesión
+// nunca se guardan en produccion, rompiendo el login.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 
 app.use(

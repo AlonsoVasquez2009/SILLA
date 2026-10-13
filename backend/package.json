@@ -1,5 +1,5 @@
 {
-  "name": "mesas-sillas-backend",
+  "name": "rentseres-backend",
   "version": "1.0.0",
   "description": "API REST para gestión de mesas y sillas",
   "main": "server.js",

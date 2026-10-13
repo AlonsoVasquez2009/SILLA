@@ -29,11 +29,11 @@ function urlFrontend() {
 
 async function enviarCorreoVerificacion(destino, nombre, token) {
   const enlace = `${urlFrontend()}/verificar.html?token=${token}`;
-  const asunto = 'Verifica tu correo — Mesas y Sillas';
+  const asunto = 'Verifica tu correo — RENTSERES';
   const textoPlano = `Hola ${nombre},\n\nConfirma tu cuenta para poder iniciar sesión:\n${enlace}\n\nEste enlace vence en 24 horas. Si no creaste esta cuenta, ignora este correo.`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color: #7a4a2a;">Mesas y Sillas</h2>
+      <h2 style="color: #7a4a2a;">RENTSERES</h2>
       <p>Hola ${nombre},</p>
       <p>Gracias por registrarte. Confirma tu correo para activar tu cuenta:</p>
       <p style="text-align: center; margin: 24px 0;">
@@ -70,11 +70,11 @@ async function enviarCorreoFactura(destino, nombre, factura) {
     .map((i) => `<tr><td>${i.nombre}</td><td style="text-align:center;">${i.cantidad}</td></tr>`)
     .join('');
 
-  const asunto = `Factura ${factura.numero} — Mesas y Sillas`;
+  const asunto = `Factura ${factura.numero} — RENTSERES`;
   const textoPlano = `Hola ${nombre},\n\nTu pago fue aprobado. Factura simulada ${factura.numero} por $${Number(factura.monto).toFixed(2)}, método ${factura.metodo}, referencia ${factura.referencia}.\n\nEsta factura es simulada y no constituye un documento tributario válido ante el Ministerio de Hacienda.`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color: #7a4a2a;">Mesas y Sillas</h2>
+      <h2 style="color: #7a4a2a;">RENTSERES</h2>
       <p>Hola ${nombre},</p>
       <p>Tu pago fue aprobado. Aquí tienes el detalle:</p>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
@@ -111,6 +111,7 @@ async function enviarCorreoFactura(destino, nombre, factura) {
     text: textoPlano,
     html,
   });
+  console.log(`[EMAIL] Factura ${factura.numero} enviada correctamente a ${destino}`);
   return { simulado: false };
 }
 

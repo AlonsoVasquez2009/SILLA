@@ -1,5 +1,5 @@
 // Envío de correos. Si no hay credenciales SMTP configuradas en .env,
-// no revienta: muestra el enlace en la consola para poder probar en local.
+// no revienta: muestra el detalle en la consola para poder probar en local.
 const nodemailer = require('nodemailer');
 
 function hayConfiguracionSMTP() {
@@ -21,48 +21,6 @@ function obtenerTransportador() {
     });
   }
   return transportador;
-}
-
-function urlFrontend() {
-  return process.env.FRONTEND_URL || 'http://localhost:3000';
-}
-
-async function enviarCorreoVerificacion(destino, nombre, token) {
-  const enlace = `${urlFrontend()}/verificar.html?token=${token}`;
-  const asunto = 'Verifica tu correo — RENTSERES';
-  const textoPlano = `Hola ${nombre},\n\nConfirma tu cuenta para poder iniciar sesión:\n${enlace}\n\nEste enlace vence en 24 horas. Si no creaste esta cuenta, ignora este correo.`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color: #7a4a2a;">RENTSERES</h2>
-      <p>Hola ${nombre},</p>
-      <p>Gracias por registrarte. Confirma tu correo para activar tu cuenta:</p>
-      <p style="text-align: center; margin: 24px 0;">
-        <a href="${enlace}" style="background: #7a4a2a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Verificar mi cuenta</a>
-      </p>
-      <p style="font-size: 13px; color: #666;">O copia y pega este enlace en tu navegador:<br>${enlace}</p>
-      <p style="font-size: 13px; color: #666;">Este enlace vence en 24 horas.</p>
-    </div>`;
-
-  const transporte = obtenerTransportador();
-
-  if (!transporte) {
-    // Modo desarrollo: no hay SMTP configurado, solo mostramos el enlace.
-    console.log('--------------------------------------------------');
-    console.log('[EMAIL] No hay SMTP configurado (ver backend/.env).');
-    console.log(`[EMAIL] Enlace de verificación para ${destino}:`);
-    console.log(enlace);
-    console.log('--------------------------------------------------');
-    return { simulado: true, enlace };
-  }
-
-  await transporte.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-    to: destino,
-    subject: asunto,
-    text: textoPlano,
-    html,
-  });
-  return { simulado: false };
 }
 
 async function enviarCorreoFactura(destino, nombre, factura) {
@@ -115,4 +73,4 @@ async function enviarCorreoFactura(destino, nombre, factura) {
   return { simulado: false };
 }
 
-module.exports = { enviarCorreoVerificacion, enviarCorreoFactura };
+module.exports = { enviarCorreoFactura };

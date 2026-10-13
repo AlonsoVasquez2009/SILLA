@@ -36,9 +36,6 @@ const api = {
   logout: () => solicitar('/auth/logout', { method: 'POST' }),
   registrarCliente: (datos) => solicitar('/auth/registro', { method: 'POST', body: JSON.stringify(datos) }),
   me: () => solicitar('/auth/me'),
-  verificarCuenta: (token) => solicitar(`/auth/verificar?token=${encodeURIComponent(token)}`),
-  reenviarVerificacion: (email) =>
-    solicitar('/auth/reenviar-verificacion', { method: 'POST', body: JSON.stringify({ email }) }),
 
   // Inventario
   obtenerInventario: () => solicitar('/inventario'),

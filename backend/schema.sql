@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS recursos (
   total        INTEGER NOT NULL CHECK (total >= 0),
   disponibles  INTEGER NOT NULL CHECK (disponibles >= 0),
   prestados    INTEGER NOT NULL CHECK (prestados >= 0),
-  CHECK (disponibles + prestados = total)
+  danados      INTEGER NOT NULL DEFAULT 0 CHECK (danados >= 0),
+  CONSTRAINT recursos_disponibles_prestados_check CHECK (disponibles + prestados + danados = total)
 );
 
 CREATE TABLE IF NOT EXISTS reservas (
@@ -101,6 +102,29 @@ CREATE TABLE IF NOT EXISTS historial (
   estado_posterior   VARCHAR(50),
   fecha              TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- Reportes de equipo dañado o perdido, y su ciclo de vida hasta que se
+-- repara (vuelve a disponibles) o se da de baja (sale del total para siempre).
+CREATE TABLE IF NOT EXISTS incidencias (
+  id                SERIAL PRIMARY KEY,
+  recurso_id        INTEGER NOT NULL REFERENCES recursos(id),
+  prestamo_id       INTEGER REFERENCES prestamos(id),
+  tipo_incidencia   VARCHAR(10) NOT NULL CHECK (tipo_incidencia IN ('dano', 'perdida')),
+  origen            VARCHAR(12) NOT NULL CHECK (origen IN ('disponible', 'prestamo')),
+  cantidad          INTEGER NOT NULL CHECK (cantidad > 0),
+  descripcion       TEXT,
+  estado            VARCHAR(20) NOT NULL DEFAULT 'reportado'
+                    CHECK (estado IN ('reportado', 'en_reparacion', 'reparado', 'dado_de_baja')),
+  reportado_por     INTEGER NOT NULL REFERENCES usuarios(id),
+  resuelto_por      INTEGER REFERENCES usuarios(id),
+  fecha_reporte     TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_resolucion  TIMESTAMP,
+  CHECK (origen = 'disponible' OR prestamo_id IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_incidencias_fecha ON incidencias (fecha_reporte);
+CREATE INDEX IF NOT EXISTS idx_incidencias_estado ON incidencias (estado);
+CREATE INDEX IF NOT EXISTS idx_incidencias_recurso ON incidencias (recurso_id);
 
 -- Pagos SIMULADOS asociados a una reserva (sin pasarela real).
 CREATE TABLE IF NOT EXISTS pagos (

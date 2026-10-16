@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte mensual — RENTSERES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <nav class="barra-nav">
+    <a href="inicio.html" class="barra-nav__marca">RENTSERES</a>
+    <div class="barra-nav__enlaces">
+      <a href="dashboard.html" id="enlace-dashboard">Dashboard</a>
+      <a href="inventario.html">Inventario</a>
+      <a href="incidencias.html">Incidencias</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="prestamos.html">Préstamos</a>
+      <a href="historial.html" id="enlace-historial">Historial</a>
+      <a href="usuarios.html" id="enlace-usuarios">Usuarios</a>
+    </div>
+    <div class="barra-nav__usuario">
+      <span id="usuario-actual"></span>
+      <button class="boton boton--secundario" id="boton-logout">Salir</button>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+    <div class="barra-acciones" style="justify-content: space-between; align-items: center;">
+      <h1 style="margin: 0;">Reporte mensual de estado del inmobiliario</h1>
+      <a class="boton boton--secundario" id="enlace-csv" href="#">Descargar CSV</a>
+    </div>
+
+    <div class="tarjeta">
+      <div class="barra-acciones">
+        <label for="selector-mes" style="color: var(--texto-suave);">Mes:</label>
+        <input type="month" id="selector-mes" />
+      </div>
+      <div id="mensaje"></div>
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Recurso</th>
+              <th>Tipo</th>
+              <th>Total</th>
+              <th>Disponibles</th>
+              <th>Prestados</th>
+              <th>Dañados ahora</th>
+              <th>% en buen estado</th>
+              <th>Daños del mes</th>
+              <th>Pérdidas del mes</th>
+              <th>Reparados en el mes</th>
+              <th>Bajas en el mes</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reporte-mensual.js"></script>
+</body>
+</html>

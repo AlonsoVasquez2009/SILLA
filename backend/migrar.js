@@ -1,11 +1,14 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 const fs = require('fs');
-const db = require('./db');
+const { pool } = require('./db');
 
+// Uso: node migrar.js [nombre-del-archivo.sql]
+// Por defecto aplica migracion_incidencias.sql (la última en agregarse).
 async function migrar() {
-  const sql = fs.readFileSync(__dirname + '/migracion_verificacion_pagos.sql', 'utf8');
-  await db.query(sql);
-  console.log('Migración aplicada correctamente');
+  const archivo = process.argv[2] || 'migracion_incidencias.sql';
+  const sql = fs.readFileSync(__dirname + '/' + archivo, 'utf8');
+  await pool.query(sql);
+  console.log(`Migración "${archivo}" aplicada correctamente`);
   process.exit(0);
 }
 

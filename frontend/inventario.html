@@ -15,6 +15,7 @@
     <div class="barra-nav__enlaces">
       <a href="dashboard.html" id="enlace-dashboard">Dashboard</a>
       <a href="inventario.html" class="activo">Inventario</a>
+      <a href="incidencias.html" id="enlace-incidencias">Incidencias</a>
       <a href="reservas.html">Reservas</a>
       <a href="prestamos.html">Préstamos</a>
       <a href="historial.html" id="enlace-historial">Historial</a>
@@ -29,7 +30,10 @@
   <main class="contenedor">
     <div class="barra-acciones" style="justify-content: space-between; align-items: center;">
       <h1 style="margin: 0;">Inventario</h1>
-      <a class="boton boton--secundario" href="/api/reportes/inventario/csv">Descargar CSV</a>
+      <div class="barra-acciones">
+        <a class="boton boton--secundario" href="reporte-mensual.html">Reporte mensual</a>
+        <a class="boton boton--secundario" href="/api/reportes/inventario/csv">Descargar CSV</a>
+      </div>
     </div>
     <div id="mensaje"></div>
 
@@ -42,6 +46,7 @@
               <th>Total</th>
               <th>Disponibles</th>
               <th>Prestados</th>
+              <th>Dañados</th>
               <th id="columna-accion"></th>
             </tr>
           </thead>

@@ -63,7 +63,22 @@ const api = {
 
   // Dashboard y reportes
   obtenerDashboard: () => solicitar('/dashboard'),
-  obtenerReporte: (tipo) => solicitar(`/reportes/${tipo}`),
+  obtenerReporte: (tipo, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return solicitar(`/reportes/${tipo}${query ? '?' + query : ''}`);
+  },
+
+  // Incidencias (daños, pérdidas, reparaciones, bajas)
+  listarIncidencias: (filtros = {}) => {
+    const params = new URLSearchParams(filtros).toString();
+    return solicitar(`/incidencias${params ? '?' + params : ''}`);
+  },
+  reportarIncidencia: (datos) =>
+    solicitar('/incidencias', { method: 'POST', body: JSON.stringify(datos) }),
+  marcarIncidenciaEnReparacion: (id) =>
+    solicitar(`/incidencias/${id}/en-reparacion`, { method: 'PUT' }),
+  repararIncidencia: (id) => solicitar(`/incidencias/${id}/reparar`, { method: 'PUT' }),
+  darDeBajaIncidencia: (id) => solicitar(`/incidencias/${id}/baja`, { method: 'PUT' }),
 
   // Pagos (simulados)
   crearPago: (datos) => solicitar('/pagos', { method: 'POST', body: JSON.stringify(datos) }),

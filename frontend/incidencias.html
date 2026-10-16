@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incidencias — RENTSERES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilos.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
+</head>
+<body>
+  <nav class="barra-nav">
+    <a href="inicio.html" class="barra-nav__marca">RENTSERES</a>
+    <div class="barra-nav__enlaces">
+      <a href="dashboard.html" id="enlace-dashboard">Dashboard</a>
+      <a href="inventario.html">Inventario</a>
+      <a href="incidencias.html" class="activo">Incidencias</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="prestamos.html">Préstamos</a>
+      <a href="historial.html" id="enlace-historial">Historial</a>
+      <a href="usuarios.html" id="enlace-usuarios">Usuarios</a>
+    </div>
+    <div class="barra-nav__usuario">
+      <span id="usuario-actual"></span>
+      <button class="boton boton--secundario" id="boton-logout">Salir</button>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+    <div class="barra-acciones" style="justify-content: space-between; align-items: center;">
+      <h1 style="margin: 0;">Equipo dañado y reparaciones</h1>
+      <button class="boton" id="boton-reportar">Reportar daño / pérdida</button>
+    </div>
+    <div id="mensaje"></div>
+
+    <div class="tarjeta" id="tarjeta-admin" style="display:none;">
+      <div class="barra-acciones">
+        <select id="filtro-estado">
+          <option value="">Todos los estados</option>
+          <option value="reportado">Reportado</option>
+          <option value="en_reparacion">En reparación</option>
+          <option value="reparado">Reparado</option>
+          <option value="dado_de_baja">Dado de baja</option>
+        </select>
+        <select id="filtro-tipo">
+          <option value="">Daño y pérdida</option>
+          <option value="dano">Solo daños</option>
+          <option value="perdida">Solo pérdidas</option>
+        </select>
+        <select id="filtro-recurso">
+          <option value="">Todos los recursos</option>
+        </select>
+      </div>
+
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Recurso</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Origen</th>
+              <th>Descripción</th>
+              <th>Reportado por</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-fondo" id="modal-fondo">
+    <div class="modal">
+      <h3>Reportar equipo dañado o perdido</h3>
+      <div class="campo">
+        <label for="modal-recurso">Recurso</label>
+        <select id="modal-recurso"></select>
+      </div>
+      <div class="campo">
+        <label for="modal-origen">¿De dónde proviene el equipo?</label>
+        <select id="modal-origen">
+          <option value="disponible">Estaba en bodega (disponible)</option>
+          <option value="prestamo">Estaba prestado</option>
+        </select>
+      </div>
+      <div class="campo" id="campo-prestamo" style="display:none;">
+        <label for="modal-prestamo">Préstamo</label>
+        <select id="modal-prestamo"></select>
+      </div>
+      <div class="campo">
+        <label for="modal-tipo">Tipo de incidencia</label>
+        <select id="modal-tipo">
+          <option value="dano">Dañado</option>
+          <option value="perdida">Perdido</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="modal-cantidad">Cantidad</label>
+        <input type="number" id="modal-cantidad" min="1" value="1" />
+      </div>
+      <div class="campo">
+        <label for="modal-descripcion">Descripción (opcional)</label>
+        <textarea id="modal-descripcion" rows="3"></textarea>
+      </div>
+      <div id="modal-mensaje"></div>
+      <div class="modal__acciones">
+        <button class="boton boton--secundario" id="modal-cancelar">Cancelar</button>
+        <button class="boton" id="modal-guardar">Reportar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/incidencias.js"></script>
+</body>
+</html>

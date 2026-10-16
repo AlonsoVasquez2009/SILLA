@@ -2,7 +2,7 @@ const { generarReporte, generarReporteCSV } = require('../services/reporteServic
 
 async function obtener(req, res, next) {
   try {
-    const datos = await generarReporte(req.params.tipo);
+    const datos = await generarReporte(req.params.tipo, req.query);
     res.json({ tipo: req.params.tipo, datos });
   } catch (err) {
     next(err);
@@ -11,7 +11,7 @@ async function obtener(req, res, next) {
 
 async function obtenerCSV(req, res, next) {
   try {
-    const csv = await generarReporteCSV(req.params.tipo);
+    const csv = await generarReporteCSV(req.params.tipo, req.query);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${req.params.tipo}.csv"`);
     res.send(csv);

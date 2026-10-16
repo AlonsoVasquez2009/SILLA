@@ -4,7 +4,7 @@ const { pool } = require('../db');
 
 async function listarInventario() {
   const { rows } = await pool.query(
-    `SELECT id, nombre, tipo, total, disponibles, prestados
+    `SELECT id, nombre, tipo, total, disponibles, prestados, danados
      FROM recursos
      ORDER BY tipo, nombre`
   );
@@ -31,11 +31,12 @@ async function actualizarTotal(id, nuevoTotal) {
   }
 
   // Lo reservado a futuro ya no bloquea el total: solo lo que está
-  // físicamente prestado ahora mismo compromete el inventario de verdad.
-  const comprometido = recurso.prestados;
+  // físicamente prestado o dañado ahora mismo compromete el inventario
+  // de verdad (ese equipo existe y no se le puede restar al total).
+  const comprometido = recurso.prestados + recurso.danados;
   if (nuevoTotal < comprometido) {
     const error = new Error(
-      `No se puede bajar el total a ${nuevoTotal}: hay ${comprometido} unidades prestadas`
+      `No se puede bajar el total a ${nuevoTotal}: hay ${comprometido} unidades prestadas o dañadas`
     );
     error.status = 409;
     throw error;
@@ -47,7 +48,7 @@ async function actualizarTotal(id, nuevoTotal) {
     `UPDATE recursos
      SET total = $1, disponibles = $2
      WHERE id = $3
-     RETURNING id, nombre, tipo, total, disponibles, prestados`,
+     RETURNING id, nombre, tipo, total, disponibles, prestados, danados`,
     [nuevoTotal, nuevoDisponibles, id]
   );
 

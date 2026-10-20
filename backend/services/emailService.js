@@ -1,26 +1,20 @@
-// Envío de correos. Si no hay credenciales SMTP configuradas en .env,
-// no revienta: muestra el detalle en la consola para poder probar en local.
-const nodemailer = require('nodemailer');
+// Envío de correos vía API HTTP (Resend) en lugar de SMTP.
+// Render bloquea los puertos SMTP salientes (25/465/587), así que usar
+// nodemailer con un host SMTP tradicional falla en producción aunque
+// funcione en local. Resend expone una API REST sobre HTTPS (puerto 443),
+// el mismo puerto que ya usa toda la app para salir a internet, por lo
+// que nunca choca con ese bloqueo.
+//
+// Variables de entorno necesarias (.env / Render → Environment):
+//   RESEND_API_KEY   -> API key de https://resend.com (gratis hasta 3,000 correos/mes)
+//   EMAIL_FROM       -> remitente verificado en Resend, ej: "RENTSERES <facturas@tudominio.com>"
+//                        (mientras no verifiques un dominio propio, Resend solo permite
+//                         enviar con onboarding@resend.dev como remitente)
 
-function hayConfiguracionSMTP() {
-  return Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
-}
+const RESEND_URL = 'https://api.resend.com/emails';
 
-let transportador = null;
-function obtenerTransportador() {
-  if (!hayConfiguracionSMTP()) return null;
-  if (!transportador) {
-    transportador = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT) || 587,
-      secure: Number(process.env.EMAIL_PORT) === 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-  }
-  return transportador;
+function hayConfiguracionAPI() {
+  return Boolean(process.env.RESEND_API_KEY);
 }
 
 async function enviarCorreoFactura(destino, nombre, factura) {
@@ -52,25 +46,39 @@ async function enviarCorreoFactura(destino, nombre, factura) {
       </p>
     </div>`;
 
-  const transporte = obtenerTransportador();
-
-  if (!transporte) {
+  if (!hayConfiguracionAPI()) {
     console.log('--------------------------------------------------');
-    console.log('[EMAIL] No hay SMTP configurado (ver backend/.env).');
+    console.log('[EMAIL] No hay RESEND_API_KEY configurada (ver backend/.env).');
     console.log(`[EMAIL] Factura simulada ${factura.numero} para ${destino} por $${factura.monto}`);
     console.log('--------------------------------------------------');
     return { simulado: true };
   }
 
-  await transporte.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-    to: destino,
-    subject: asunto,
-    text: textoPlano,
-    html,
+  const remitente = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+
+  const respuesta = await fetch(RESEND_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: remitente,
+      to: [destino],
+      subject: asunto,
+      text: textoPlano,
+      html,
+    }),
   });
-  console.log(`[EMAIL] Factura ${factura.numero} enviada correctamente a ${destino}`);
-  return { simulado: false };
+
+  if (!respuesta.ok) {
+    const detalle = await respuesta.text().catch(() => '');
+    throw new Error(`Resend respondió ${respuesta.status}: ${detalle}`);
+  }
+
+  const data = await respuesta.json();
+  console.log(`[EMAIL] Factura ${factura.numero} enviada correctamente a ${destino} (id: ${data.id})`);
+  return { simulado: false, id: data.id };
 }
 
 module.exports = { enviarCorreoFactura };

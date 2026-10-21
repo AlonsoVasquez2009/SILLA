@@ -1,8 +1,8 @@
-// Envío de correos vía API HTTP (Resend).
-const RESEND_URL = 'https://api.resend.com/emails';
+// Envío de correos vía API HTTP (SendGrid).
+const SENDGRID_URL = 'https://api.sendgrid.com/v3/mail/send';
 
 function hayConfiguracionAPI() {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(process.env.SENDGRID_API_KEY);
 }
 
 function filaOpcional(etiqueta, valor) {
@@ -109,37 +109,46 @@ estar firmado y transmitido al Ministerio de Hacienda.`;
 
   if (!hayConfiguracionAPI()) {
     console.log('--------------------------------------------------');
-    console.log('[EMAIL] No hay RESEND_API_KEY configurada (ver backend/.env).');
+    console.log('[EMAIL] No hay SENDGRID_API_KEY configurada (ver backend/.env).');
     console.log(`[EMAIL] ${tituloDoc} ${f.numero} para ${destino} por $${f.total.toFixed(2)}`);
     console.log('--------------------------------------------------');
     return { simulado: true };
   }
 
-  const remitente = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  // Debe ser EXACTAMENTE el correo verificado como "Single Sender" en SendGrid.
+  const remitente = process.env.EMAIL_FROM || 'mesassillas585@gmail.com';
+  // Si EMAIL_FROM viene como "Nombre <correo@dominio.com>" lo separamos,
+  // porque SendGrid pide el nombre y el correo en campos distintos.
+  const match = remitente.match(/^(.*)<(.+)>$/);
+  const fromEmail = match ? match[2].trim() : remitente.trim();
+  const fromName = match ? match[1].trim().replace(/^"|"$/g, '') : (process.env.EMISOR_NOMBRE || 'RENTSERES');
 
-  const respuesta = await fetch(RESEND_URL, {
+  const respuesta = await fetch(SENDGRID_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
     },
     body: JSON.stringify({
-      from: remitente,
-      to: [destino],
-      subject: asunto,
-      text: textoPlano,
-      html,
+      personalizations: [{ to: [{ email: destino }], subject: asunto }],
+      from: { email: fromEmail, name: fromName },
+      content: [
+        { type: 'text/plain', value: textoPlano },
+        { type: 'text/html', value: html },
+      ],
     }),
   });
 
   if (!respuesta.ok) {
     const detalle = await respuesta.text().catch(() => '');
-    throw new Error(`Resend respondió ${respuesta.status}: ${detalle}`);
+    throw new Error(`SendGrid respondió ${respuesta.status}: ${detalle}`);
   }
 
-  const data = await respuesta.json();
-  console.log(`[EMAIL] ${f.numero} enviado correctamente a ${destino} (id: ${data.id})`);
-  return { simulado: false, id: data.id };
+  // SendGrid no regresa un cuerpo JSON en éxito (202 Accepted, sin contenido),
+  // pero sí regresa un header con un id de mensaje útil para rastrear envíos.
+  const messageId = respuesta.headers.get('x-message-id');
+  console.log(`[EMAIL] ${f.numero} enviado correctamente a ${destino} (id: ${messageId || 'n/a'})`);
+  return { simulado: false, id: messageId };
 }
 
 module.exports = { enviarCorreoFactura };

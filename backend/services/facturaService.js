@@ -12,8 +12,11 @@ const { enviarCorreoFactura } = require('./emailService');
 const IVA_TASA = 0.13; // 13% IVA, Art. 54 Ley de IVA
 
 async function obtenerItemsReserva(reservaId) {
+  // La tabla detalle_reservas no guarda precio por ítem (nunca se agregó esa
+  // columna), así que aquí solo traemos nombre y cantidad; el precio unitario
+  // se calcula después, repartiendo el total pagado entre las unidades.
   const { rows } = await pool.query(
-    `SELECT rec.nombre, dr.cantidad, dr.precio_unitario
+    `SELECT rec.nombre, dr.cantidad
      FROM detalle_reservas dr
      JOIN recursos rec ON rec.id = dr.recurso_id
      WHERE dr.reserva_id = $1`,
@@ -43,8 +46,18 @@ async function generarYEnviarFactura(pago, datosReceptor = {}) {
   );
   const reserva = reservaRows[0];
 
-  const items = await obtenerItemsReserva(pago.reserva_id);
+  const itemsBase = await obtenerItemsReserva(pago.reserva_id);
   const { subtotal, iva, total } = calcularMontos(pago.monto);
+
+  // No hay precio por ítem guardado en la base de datos, así que repartimos
+  // el subtotal entre el total de unidades para obtener un precio unitario
+  // uniforme (el total de la factura siempre cuadra con lo realmente pagado).
+  const totalUnidades = itemsBase.reduce((acc, i) => acc + i.cantidad, 0) || 1;
+  const precioUnitarioPromedio = Number((subtotal / totalUnidades).toFixed(2));
+  const items = itemsBase.map((i) => ({
+    ...i,
+    precio_unitario: precioUnitarioPromedio,
+  }));
 
   // Si el cliente da NIT/NRC, es Crédito Fiscal ('03'); si no, Consumidor Final ('01')
   const tipoDte = datosReceptor.nit_receptor ? '03' : '01';

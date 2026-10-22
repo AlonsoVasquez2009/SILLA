@@ -93,6 +93,37 @@
       <div id="modal-pago-mensaje"></div>
       <form id="form-pago">
         <div class="campo">
+          <label for="pago-tipo-dte">Tipo de comprobante</label>
+          <select id="pago-tipo-dte">
+            <option value="01">Factura de Consumidor Final</option>
+            <option value="03">Comprobante de Crédito Fiscal</option>
+          </select>
+        </div>
+        <div id="campos-credito-fiscal" style="display: none;">
+          <div class="campo">
+            <label for="pago-razon-social">Razón social / Nombre</label>
+            <input type="text" id="pago-razon-social" placeholder="Nombre o razón social del receptor" />
+          </div>
+          <div class="form-fila">
+            <div class="campo">
+              <label for="pago-nit">NIT</label>
+              <input type="text" id="pago-nit" placeholder="0000-000000-000-0" />
+            </div>
+            <div class="campo">
+              <label for="pago-nrc">NRC</label>
+              <input type="text" id="pago-nrc" placeholder="000000-0" />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="pago-giro">Giro</label>
+            <input type="text" id="pago-giro" placeholder="Actividad económica" />
+          </div>
+          <div class="campo">
+            <label for="pago-direccion">Dirección</label>
+            <input type="text" id="pago-direccion" placeholder="Dirección del receptor" />
+          </div>
+        </div>
+        <div class="campo">
           <label for="pago-metodo">Método de pago</label>
           <select id="pago-metodo">
             <option value="tarjeta">Tarjeta</option>

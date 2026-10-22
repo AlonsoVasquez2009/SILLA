@@ -48,9 +48,10 @@ async function calcularMonto(reservaId) {
   return rows.reduce((total, fila) => total + fila.cantidad * (PRECIO_POR_TIPO[fila.tipo] || 0), 0);
 }
 
-// datos: { reserva_id, metodo: 'tarjeta' | 'transferencia', numero_tarjeta?, vencimiento?, cvv? }
+// datos: { reserva_id, metodo: 'tarjeta' | 'transferencia', numero_tarjeta?, vencimiento?, cvv?,
+//          tipo_dte?: '01' | '03', nombre_receptor?, nit_receptor?, nrc_receptor?, giro_receptor?, direccion_receptor? }
 async function simularPago(usuario, datos) {
-  const { reserva_id, metodo } = datos;
+  const { reserva_id, metodo, tipo_dte } = datos;
 
   if (!reserva_id) {
     const error = new Error('Debes indicar la reserva a pagar');
@@ -61,6 +62,20 @@ async function simularPago(usuario, datos) {
     const error = new Error('Método de pago inválido');
     error.status = 400;
     throw error;
+  }
+  if (tipo_dte && !['01', '03'].includes(tipo_dte)) {
+    const error = new Error('Tipo de comprobante inválido');
+    error.status = 400;
+    throw error;
+  }
+  // El Crédito Fiscal (03) exige identificar al receptor ante Hacienda.
+  if (tipo_dte === '03') {
+    const { nombre_receptor, nit_receptor, nrc_receptor, giro_receptor } = datos;
+    if (!nombre_receptor || !nit_receptor || !nrc_receptor || !giro_receptor) {
+      const error = new Error('Para Crédito Fiscal debes indicar razón social, NIT, NRC y giro');
+      error.status = 400;
+      throw error;
+    }
   }
 
   const cliente = await pool.connect();
@@ -137,7 +152,14 @@ async function procesarPago(usuario, datos) {
     throw error;
   }
 
-  const factura = await generarYEnviarFactura(pago);
+  const {
+    tipo_dte, nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor,
+  } = datos;
+  const datosReceptor = {
+    tipo_dte, nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor,
+  };
+
+  const factura = await generarYEnviarFactura(pago, datosReceptor);
   return { ...pago, factura };
 }
 

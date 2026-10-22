@@ -59,8 +59,9 @@ async function generarYEnviarFactura(pago, datosReceptor = {}) {
     precio_unitario: precioUnitarioPromedio,
   }));
 
-  // Si el cliente da NIT/NRC, es Crédito Fiscal ('03'); si no, Consumidor Final ('01')
-  const tipoDte = datosReceptor.nit_receptor ? '03' : '01';
+  // El tipo de comprobante lo elige el usuario en el formulario de pago:
+  // '03' Crédito Fiscal (requiere NIT/NRC) o '01' Consumidor Final (por defecto).
+  const tipoDte = datosReceptor.tipo_dte === '03' ? '03' : '01';
   const nombreReceptor = datosReceptor.nombre_receptor || usuario.nombre;
 
   const { rows: facturaRows } = await pool.query(

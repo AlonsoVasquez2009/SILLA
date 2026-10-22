@@ -4,6 +4,7 @@
   configurarLogout();
 
   if (usuario.rol !== 'admin') {
+    document.getElementById('enlace-incidencias').remove();
     document.getElementById('enlace-historial').remove();
     document.getElementById('enlace-usuarios').remove();
   }
@@ -18,6 +19,8 @@
   const formPago = document.getElementById('form-pago');
   const campoMetodo = document.getElementById('pago-metodo');
   const camposTarjeta = document.getElementById('campos-tarjeta');
+  const campoTipoDte = document.getElementById('pago-tipo-dte');
+  const camposCreditoFiscal = document.getElementById('campos-credito-fiscal');
   const PRECIO_POR_TIPO = { mesa: 5, silla: 1 };
   let reservaEnPago = null;
   let recursosPorId = {};
@@ -134,6 +137,7 @@
     modalPagoMensaje.innerHTML = '';
     formPago.reset();
     camposTarjeta.style.display = 'block';
+    camposCreditoFiscal.style.display = 'none';
     const monto = calcularMonto(reserva.items);
     modalPagoMonto.textContent = `Total a pagar: $${monto.toFixed(2)} (precio simulado)`;
     modalPagoFondo.classList.add('visible');
@@ -141,6 +145,10 @@
 
   campoMetodo.addEventListener('change', () => {
     camposTarjeta.style.display = campoMetodo.value === 'tarjeta' ? 'block' : 'none';
+  });
+
+  campoTipoDte.addEventListener('change', () => {
+    camposCreditoFiscal.style.display = campoTipoDte.value === '03' ? 'block' : 'none';
   });
 
   document.getElementById('modal-pago-cancelar').addEventListener('click', () => {
@@ -156,6 +164,21 @@
       datos.numero_tarjeta = document.getElementById('pago-numero').value.trim();
       datos.vencimiento = document.getElementById('pago-vencimiento').value.trim();
       datos.cvv = document.getElementById('pago-cvv').value.trim();
+    }
+
+    datos.tipo_dte = campoTipoDte.value;
+    if (datos.tipo_dte === '03') {
+      const nombre_receptor = document.getElementById('pago-razon-social').value.trim();
+      const nit_receptor = document.getElementById('pago-nit').value.trim();
+      const nrc_receptor = document.getElementById('pago-nrc').value.trim();
+      const giro_receptor = document.getElementById('pago-giro').value.trim();
+      const direccion_receptor = document.getElementById('pago-direccion').value.trim();
+
+      if (!nombre_receptor || !nit_receptor || !nrc_receptor || !giro_receptor) {
+        modalPagoMensaje.innerHTML = '<div class="mensaje mensaje--error">Para Crédito Fiscal, completa razón social, NIT, NRC y giro.</div>';
+        return;
+      }
+      Object.assign(datos, { nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor });
     }
 
     const botonPagar = document.getElementById('modal-pago-pagar');

@@ -16,7 +16,7 @@ async function obtenerItemsReserva(reservaId) {
   // columna), así que aquí solo traemos nombre y cantidad; el precio unitario
   // se calcula después, repartiendo el total pagado entre las unidades.
   const { rows } = await pool.query(
-    `SELECT rec.nombre, dr.cantidad
+    `SELECT rec.id AS recurso_id, rec.nombre, dr.cantidad
      FROM detalle_reservas dr
      JOIN recursos rec ON rec.id = dr.recurso_id
      WHERE dr.reserva_id = $1`,

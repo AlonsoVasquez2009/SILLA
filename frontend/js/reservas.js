@@ -141,6 +141,12 @@
     const monto = calcularMonto(reserva.items);
     modalPagoMonto.textContent = `Total a pagar: $${monto.toFixed(2)} (precio simulado)`;
     modalPagoFondo.classList.add('visible');
+    document.body.classList.add('scroll-bloqueado');
+  }
+
+  function cerrarModalPago() {
+    modalPagoFondo.classList.remove('visible');
+    document.body.classList.remove('scroll-bloqueado');
   }
 
   campoMetodo.addEventListener('change', () => {
@@ -152,7 +158,7 @@
   });
 
   document.getElementById('modal-pago-cancelar').addEventListener('click', () => {
-    modalPagoFondo.classList.remove('visible');
+    cerrarModalPago();
   });
 
   formPago.addEventListener('submit', async (evento) => {
@@ -187,7 +193,7 @@
 
     try {
       await api.crearPago(datos);
-      modalPagoFondo.classList.remove('visible');
+      cerrarModalPago();
       await cargarReservas();
       mensajeLista.innerHTML = '<div class="mensaje mensaje--exito">Pago aprobado (simulado). Te enviamos la factura por correo.</div>';
     } catch (error) {

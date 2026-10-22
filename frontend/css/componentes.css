@@ -18,6 +18,14 @@
   padding: var(--espacio-lg);
   max-width: 440px;
   width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Mientras hay un modal abierto, la página de fondo no debe poder scrollear;
+   el scroll solo debe pasar dentro del propio modal (regla de arriba). */
+body.scroll-bloqueado {
+  overflow: hidden;
 }
 .modal__acciones {
   display: flex;

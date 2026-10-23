@@ -8,18 +8,15 @@ const { generarYEnviarFactura } = require('./facturaService');
 // tipo_dte: '01' Consumidor Final (datos opcionales) | '03' Credito Fiscal
 // (nombre/razon social, NIT y NRC obligatorios por ley; giro y direccion
 // tambien se piden porque el Codigo Tributario los exige en el documento).
-const { validarNIT, validarNRC, validarDUI } = require('../utils/facturaUtils');
+const { validarNIT, validarNRC } = require('../utils/facturaUtils');
 
 function validarDatosFacturacion(datos) {
   const tipoDte = datos.tipo_dte === '03' ? '03' : '01';
-  const condicionOperacion = datos.condicion_operacion === 'CREDITO' ? 'CREDITO' : 'CONTADO';
 
   const documento = {
     tipo_dte: tipoDte,
-    condicion_operacion: condicionOperacion,
     cliente_nombre: (datos.cliente_nombre || '').trim() || null,
     cliente_nit: (datos.cliente_nit || '').trim() || null,
-    cliente_dui: (datos.cliente_dui || '').trim() || null,
     cliente_nrc: (datos.cliente_nrc || '').trim() || null,
     cliente_giro: (datos.cliente_giro || '').trim() || null,
     cliente_direccion: (datos.cliente_direccion || '').trim() || null,
@@ -49,10 +46,6 @@ function validarDatosFacturacion(datos) {
       error.status = 400;
       throw error;
     }
-  } else if (documento.cliente_dui && !validarDUI(documento.cliente_dui)) {
-    const error = new Error('El DUI ingresado no tiene un formato valido');
-    error.status = 400;
-    throw error;
   }
 
   return documento;

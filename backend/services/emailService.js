@@ -62,7 +62,7 @@ function bloqueResumenIVA(doc) {
 function piePago(doc) {
   return `
     <table style="width:100%;font-size:12.5px;color:#333;margin-top:10px;">
-      <tr><td>Condición de la operación</td><td style="text-align:right;">${doc.condicionOperacion === 'CREDITO' ? 'Crédito' : 'Contado'}</td></tr>
+      <tr><td>Condición de la operación</td><td style="text-align:right;">Contado</td></tr>
       <tr><td>Forma de pago</td><td style="text-align:right;">${doc.metodo === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}</td></tr>
       <tr><td>Referencia de pago</td><td style="text-align:right;">${doc.referencia}</td></tr>
       <tr><td>Fecha del servicio</td><td style="text-align:right;">${doc.fecha}</td></tr>
@@ -87,7 +87,7 @@ function plantillaConsumidorFinal(nombre, doc) {
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
       <div style="text-align:center;border-bottom:2px solid #7a4a2a;padding-bottom:10px;margin-bottom:14px;">
         <h2 style="color:#7a4a2a;margin:0;">FACTURA DE CONSUMIDOR FINAL</h2>
-        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong> &nbsp;|&nbsp; Serie: ${doc.serie}</p>
+        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong></p>
       </div>
       <h4 style="margin-bottom:4px;">Emisor</h4>
       ${bloqueEmisor(doc.emisor)}
@@ -117,7 +117,7 @@ function plantillaCreditoFiscal(nombre, doc) {
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
       <div style="text-align:center;border-bottom:2px solid #7a4a2a;padding-bottom:10px;margin-bottom:14px;">
         <h2 style="color:#7a4a2a;margin:0;">COMPROBANTE DE CRÉDITO FISCAL</h2>
-        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong> &nbsp;|&nbsp; Serie: ${doc.serie}</p>
+        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong></p>
       </div>
       <div style="display:flex;gap:16px;">
         <div style="flex:1;">

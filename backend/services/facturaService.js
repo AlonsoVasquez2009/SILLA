@@ -1,16 +1,20 @@
 // Generación de facturas con el formato legal salvadoreño.
 //
-// Soporta los dos tipos de documento que necesita un negocio minorista:
+// Soporta los dos tipos de documento de un negocio minorista:
 //   01 = Factura de Consumidor Final
 //   03 = Comprobante de Crédito Fiscal
 //
-// AVISO IMPORTANTE: este módulo genera el MODELO/FORMATO correcto (los
-// campos y el desglose de IVA que exige la ley), pero el documento sigue
-// siendo de control interno: no se firma con certificado digital ni se
-// transmite a la API del Ministerio de Hacienda, así que no es un DTE
-// (Documento Tributario Electrónico) con validez fiscal. Para que lo sea
-// de verdad hace falta integrarse con un proveedor autorizado o con la API
-// de Hacienda (ambos requieren trámite y certificado propios del negocio).
+// IMPORTANTE sobre las columnas: esta tabla "facturas" ya traía datos reales
+// en producción (nombre_receptor, nit_receptor, nrc_receptor, giro_receptor,
+// direccion_receptor, subtotal, iva, total, tipo_dte) de una versión anterior
+// del sistema. Este archivo usa esos MISMOS nombres de columna a propósito,
+// para no pisar ni romper las facturas que ya se generaron. No se agregan
+// columnas nuevas ni se requiere ninguna migración adicional.
+//
+// AVISO LEGAL: este documento sigue el formato/campos que exige el Código
+// Tributario (emisor, receptor, desglose de IVA, monto en letras), pero no
+// es un DTE firmado y transmitido al Ministerio de Hacienda, así que no
+// reemplaza a un Documento Tributario Electrónico con validez fiscal.
 const { pool } = require('../db');
 const { enviarCorreoFactura } = require('./emailService');
 const { empresa } = require('../config/empresa');
@@ -39,27 +43,16 @@ function calcularDesgloseIVA(montoTotal) {
   return { gravado, iva, total };
 }
 
-async function siguienteCorrelativo(tipoDte, cliente) {
-  const secuencia = tipoDte === '03' ? 'facturas_ccf_correlativo_seq' : 'facturas_cf_correlativo_seq';
-  const { rows } = await cliente.query(`SELECT nextval('${secuencia}') AS n`);
-  return Number(rows[0].n);
-}
-
-function formatearNumero(tipoDte, serie, correlativo) {
+// Mismo esquema de numeración ya usado en producción: PREFIJO-0001-ID (8 dígitos).
+function formatearNumero(tipoDte, facturaId) {
   const prefijo = tipoDte === '03' ? 'CCF' : 'CF';
-  return `${prefijo}-${serie}-${String(correlativo).padStart(6, '0')}`;
+  return `${prefijo}-0001-${String(facturaId).padStart(8, '0')}`;
 }
 
 // datosDocumento (opcional, viene del formulario de pago):
-//   {
-//     tipo_dte: '01' | '03',
-//     condicion_operacion: 'CONTADO' | 'CREDITO',
-//     cliente_nombre, cliente_nit, cliente_dui, cliente_nrc,
-//     cliente_giro, cliente_direccion
-//   }
+//   { tipo_dte: '01' | '03', cliente_nombre, cliente_nit, cliente_nrc, cliente_giro, cliente_direccion }
 async function generarYEnviarFactura(pago, datosDocumento = {}) {
   const tipoDte = datosDocumento.tipo_dte === '03' ? '03' : '01';
-  const condicionOperacion = datosDocumento.condicion_operacion === 'CREDITO' ? 'CREDITO' : 'CONTADO';
 
   const { rows: usuarioRows } = await pool.query(
     `SELECT nombre, email FROM usuarios WHERE id = $1`,
@@ -75,60 +68,34 @@ async function generarYEnviarFactura(pago, datosDocumento = {}) {
 
   const items = await obtenerItemsReserva(pago.reserva_id);
   const { gravado, iva, total } = calcularDesgloseIVA(pago.monto);
-  const totalEnLetras = montoALetras(total);
 
-  const serie = 'A';
+  const nombreReceptor = datosDocumento.cliente_nombre || usuario.nombre;
+  const nitReceptor = datosDocumento.cliente_nit ? formatearNIT(datosDocumento.cliente_nit) : null;
+  const nrcReceptor = datosDocumento.cliente_nrc || null;
+  const giroReceptor = datosDocumento.cliente_giro || null;
+  const direccionReceptor = datosDocumento.cliente_direccion || null;
 
-  const cliente = await pool.connect();
-  let facturaId;
-  let correlativo;
-  let numero;
-  try {
-    await cliente.query('BEGIN');
-
-    correlativo = await siguienteCorrelativo(tipoDte, cliente);
-    numero = formatearNumero(tipoDte, serie, correlativo);
-
-    const { rows: facturaRows } = await cliente.query(
-      `INSERT INTO facturas (
-         pago_id, usuario_id, reserva_id, monto,
-         tipo_dte, serie, correlativo, condicion_operacion,
-         cliente_nombre, cliente_nit, cliente_dui, cliente_nrc,
-         cliente_giro, cliente_direccion,
-         monto_gravado, monto_iva, monto_exento, monto_total, total_en_letras,
-         numero
-       )
-       VALUES ($1,$2,$3,$4, $5,$6,$7,$8, $9,$10,$11,$12, $13,$14, $15,$16,0,$17,$18, $19)
-       RETURNING id`,
-      [
-        pago.id, pago.usuario_id, pago.reserva_id, pago.monto,
-        tipoDte, serie, correlativo, condicionOperacion,
-        datosDocumento.cliente_nombre || usuario.nombre,
-        datosDocumento.cliente_nit ? formatearNIT(datosDocumento.cliente_nit) : null,
-        datosDocumento.cliente_dui || null,
-        datosDocumento.cliente_nrc || null,
-        datosDocumento.cliente_giro || null,
-        datosDocumento.cliente_direccion || null,
-        gravado, iva, total, totalEnLetras,
-        numero,
-      ]
-    );
-    facturaId = facturaRows[0].id;
-
-    await cliente.query('COMMIT');
-  } catch (err) {
-    await cliente.query('ROLLBACK');
-    throw err;
-  } finally {
-    cliente.release();
-  }
+  const { rows: facturaRows } = await pool.query(
+    `INSERT INTO facturas (
+       pago_id, usuario_id, reserva_id, monto,
+       tipo_dte, nombre_receptor, nit_receptor, nrc_receptor,
+       giro_receptor, direccion_receptor, subtotal, iva, total
+     )
+     VALUES ($1,$2,$3,$4, $5,$6,$7,$8, $9,$10,$11,$12,$13)
+     RETURNING id`,
+    [
+      pago.id, pago.usuario_id, pago.reserva_id, pago.monto,
+      tipoDte, nombreReceptor, nitReceptor, nrcReceptor,
+      giroReceptor, direccionReceptor, gravado, iva, total,
+    ]
+  );
+  const facturaId = facturaRows[0].id;
+  const numero = formatearNumero(tipoDte, facturaId);
+  await pool.query(`UPDATE facturas SET numero = $1 WHERE id = $2`, [numero, facturaId]);
 
   const documento = {
     tipoDte,
     numero,
-    serie,
-    correlativo,
-    condicionOperacion,
     metodo: pago.metodo,
     referencia: pago.referencia,
     fecha: reserva.fecha,
@@ -137,15 +104,14 @@ async function generarYEnviarFactura(pago, datosDocumento = {}) {
     iva,
     exento: 0,
     total,
-    totalEnLetras,
+    totalEnLetras: montoALetras(total),
     emisor: empresa,
     receptor: {
-      nombre: datosDocumento.cliente_nombre || usuario.nombre,
-      nit: datosDocumento.cliente_nit ? formatearNIT(datosDocumento.cliente_nit) : null,
-      dui: datosDocumento.cliente_dui || null,
-      nrc: datosDocumento.cliente_nrc || null,
-      giro: datosDocumento.cliente_giro || null,
-      direccion: datosDocumento.cliente_direccion || null,
+      nombre: nombreReceptor,
+      nit: nitReceptor,
+      nrc: nrcReceptor,
+      giro: giroReceptor,
+      direccion: direccionReceptor,
       email: usuario.email,
     },
   };

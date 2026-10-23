@@ -1,16 +1,9 @@
 (async () => {
-  const usuario = await protegerPagina();
+  const usuario = await protegerPagina('admin');
   if (!usuario) return;
   configurarLogout();
 
-  const esAdmin = usuario.rol === 'admin';
-  if (!esAdmin) {
-    document.getElementById('enlace-historial').remove();
-    document.getElementById('enlace-usuarios').remove();
-  }
-
   const mensaje = document.getElementById('mensaje');
-  const tarjetaAdmin = document.getElementById('tarjeta-admin');
   const cuerpoTabla = document.getElementById('cuerpo-tabla');
   const filtroEstado = document.getElementById('filtro-estado');
   const filtroTipo = document.getElementById('filtro-tipo');
@@ -49,11 +42,9 @@
       .map((r) => `<option value="${r.id}">${r.nombre} (${r.tipo})</option>`)
       .join('');
 
-    if (esAdmin) {
-      filtroRecurso.innerHTML =
-        '<option value="">Todos los recursos</option>' +
-        recursos.map((r) => `<option value="${r.id}">${r.nombre}</option>`).join('');
-    }
+    filtroRecurso.innerHTML =
+      '<option value="">Todos los recursos</option>' +
+      recursos.map((r) => `<option value="${r.id}">${r.nombre}</option>`).join('');
 
     const { prestamos } = await api.listarPrestamos();
     prestamosActivos = prestamos.filter((p) =>
@@ -126,7 +117,7 @@
       modalFondo.classList.remove('visible');
       mensaje.innerHTML = '<div class="mensaje mensaje--exito">Incidencia registrada correctamente.</div>';
       await cargarListasBase();
-      if (esAdmin) await cargarIncidencias();
+      await cargarIncidencias();
     } catch (error) {
       modalMensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
     }
@@ -198,13 +189,10 @@
     }
   }
 
-  await cargarListasBase();
+  filtroEstado.addEventListener('change', cargarIncidencias);
+  filtroTipo.addEventListener('change', cargarIncidencias);
+  filtroRecurso.addEventListener('change', cargarIncidencias);
 
-  if (esAdmin) {
-    tarjetaAdmin.style.display = '';
-    filtroEstado.addEventListener('change', cargarIncidencias);
-    filtroTipo.addEventListener('change', cargarIncidencias);
-    filtroRecurso.addEventListener('change', cargarIncidencias);
-    await cargarIncidencias();
-  }
+  await cargarListasBase();
+  await cargarIncidencias();
 })();

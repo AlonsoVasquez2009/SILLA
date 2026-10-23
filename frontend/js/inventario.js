@@ -5,6 +5,7 @@
 
   const esAdmin = usuario.rol === 'admin';
   if (!esAdmin) {
+    document.getElementById('enlace-incidencias').remove();
     document.getElementById('enlace-historial').remove();
     document.getElementById('enlace-usuarios').remove();
   }

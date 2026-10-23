@@ -1,225 +1,191 @@
-// Envío de correos vía API HTTP (SendGrid).
-const SENDGRID_URL = 'https://api.sendgrid.com/v3/mail/send';
+// Envío de correos vía API HTTP (Resend) en lugar de SMTP.
+// Render bloquea los puertos SMTP salientes (25/465/587), así que usar
+// nodemailer con un host SMTP tradicional falla en producción aunque
+// funcione en local. Resend expone una API REST sobre HTTPS (puerto 443),
+// el mismo puerto que ya usa toda la app para salir a internet, por lo
+// que nunca choca con ese bloqueo.
+//
+// Variables de entorno necesarias (.env / Render → Environment):
+//   RESEND_API_KEY   -> API key de https://resend.com (gratis hasta 3,000 correos/mes)
+//   EMAIL_FROM       -> remitente verificado en Resend, ej: "RENTSERES <facturas@tudominio.com>"
+//                        (mientras no verifiques un dominio propio, Resend solo permite
+//                         enviar con onboarding@resend.dev como remitente)
+//
+// Esta versión envía el modelo real de factura salvadoreña:
+//   01 Factura de Consumidor Final  -> plantillaConsumidorFinal()
+//   03 Comprobante de Crédito Fiscal -> plantillaCreditoFiscal()
+// Ver backend/services/facturaService.js para el AVISO sobre validez fiscal.
+
+const RESEND_URL = 'https://api.resend.com/emails';
 
 function hayConfiguracionAPI() {
-  return Boolean(process.env.SENDGRID_API_KEY);
+  return Boolean(process.env.RESEND_API_KEY);
 }
 
-// Ícono propio simple (silueta de mesa + silla) en SVG, embebido como data URI
-// para que se vea en el correo sin depender de un archivo externo.
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <rect width="48" height="48" rx="10" fill="#7a4a2a"/>
-  <rect x="9" y="14" width="22" height="4" rx="1" fill="#fff"/>
-  <rect x="11" y="18" width="3" height="11" fill="#fff"/>
-  <rect x="27" y="18" width="3" height="11" fill="#fff"/>
-  <path d="M34 20 h7 v3 h-2 v9 h-3 v-9 h-2 z" fill="#fff"/>
-  <rect x="35" y="14" width="5" height="6" rx="1" fill="#fff"/>
-</svg>`;
-const LOGO_DATA_URI = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG).toString('base64')}`;
-
-function filaOpcional(etiqueta, valor) {
-  return valor ? `<tr><td style="padding:1px 0;"><strong>${etiqueta}:</strong> ${valor}</td></tr>` : '';
+function money(n) {
+  return `$${Number(n).toFixed(2)}`;
 }
 
-async function enviarCorreoFactura(destino, nombre, f) {
-  const esCreditoFiscal = f.tipoDte === '03';
-  const tituloDoc = esCreditoFiscal ? 'COMPROBANTE DE CRÉDITO FISCAL' : 'FACTURA DE CONSUMIDOR FINAL';
-
-  const emisor = {
-    nombre: process.env.EMISOR_NOMBRE || 'RENTSERES',
-    nit: process.env.EMISOR_NIT || '',
-    nrc: process.env.EMISOR_NRC || '',
-    giro: process.env.EMISOR_GIRO || '',
-    direccion: process.env.EMISOR_DIRECCION || '',
-    correo: process.env.EMISOR_CORREO || process.env.EMAIL_FROM || '',
-  };
-
-  const fechaGeneracion = new Date();
-  const fechaGeneracionTexto = fechaGeneracion.toISOString().slice(0, 19).replace('T', ' ');
-
-  const filasItems = f.items
-    .map((i) => {
-      const precio = Number(i.precio_unitario || 0);
-      const totalLinea = (precio * i.cantidad).toFixed(2);
-      const codigo = `REC-${String(i.recurso_id ?? '').padStart(4, '0')}`;
-      return `<tr>
-        <td style="padding:4px; border:1px dashed #bbb;">${codigo}</td>
-        <td style="padding:4px; border:1px dashed #bbb; text-align:center;">${i.cantidad}</td>
-        <td style="padding:4px; border:1px dashed #bbb; text-align:center;">Unidad</td>
-        <td style="padding:4px; border:1px dashed #bbb;">${i.nombre}</td>
-        <td style="padding:4px; border:1px dashed #bbb; text-align:right;">$${precio.toFixed(2)}</td>
-        <td style="padding:4px; border:1px dashed #bbb; text-align:right;">$0.00</td>
-        <td style="padding:4px; border:1px dashed #bbb; text-align:right;">$${totalLinea}</td>
-      </tr>`;
-    })
+function filasItems(items) {
+  return items
+    .map(
+      (i) => `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.cantidad}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.nombre}</td>
+      </tr>`
+    )
     .join('');
+}
 
-  const asunto = `[SIMULADO] ${tituloDoc} ${f.numero} — ${emisor.nombre}`;
+function bloqueEmisor(emisor) {
+  return `
+    <table style="width:100%;font-size:12.5px;color:#333;">
+      <tr><td><strong>${emisor.nombre}</strong>${emisor.nombreComercial ? ` (${emisor.nombreComercial})` : ''}</td></tr>
+      <tr><td>NIT: ${emisor.nit} &nbsp;|&nbsp; NRC: ${emisor.nrc}</td></tr>
+      <tr><td>Giro: ${emisor.giro}</td></tr>
+      <tr><td>Dirección: ${emisor.direccion}, ${emisor.municipio}, ${emisor.departamento}</td></tr>
+      ${emisor.telefono ? `<tr><td>Teléfono: ${emisor.telefono}</td></tr>` : ''}
+    </table>`;
+}
 
-  const textoPlano = `*** DOCUMENTO SIMULADO — NO ES UN DTE VÁLIDO ANTE EL MINISTERIO DE HACIENDA ***
+function bloqueResumenIVA(doc) {
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
+      <tr><td style="padding:3px 0;">Ventas exentas</td><td style="text-align:right;">${money(doc.exento)}</td></tr>
+      <tr><td style="padding:3px 0;">Ventas gravadas (sub-total)</td><td style="text-align:right;">${money(doc.gravado)}</td></tr>
+      <tr><td style="padding:3px 0;">IVA (13%)</td><td style="text-align:right;">${money(doc.iva)}</td></tr>
+      <tr style="border-top:1px solid #ccc;"><td style="padding:6px 0;"><strong>TOTAL A PAGAR</strong></td><td style="text-align:right;"><strong>${money(doc.total)}</strong></td></tr>
+    </table>
+    <p style="font-size:12px;color:#555;margin-top:6px;"><em>Son: ${doc.totalEnLetras}</em></p>`;
+}
 
-Hola ${nombre},
+function piePago(doc) {
+  return `
+    <table style="width:100%;font-size:12.5px;color:#333;margin-top:10px;">
+      <tr><td>Condición de la operación</td><td style="text-align:right;">${doc.condicionOperacion === 'CREDITO' ? 'Crédito' : 'Contado'}</td></tr>
+      <tr><td>Forma de pago</td><td style="text-align:right;">${doc.metodo === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}</td></tr>
+      <tr><td>Referencia de pago</td><td style="text-align:right;">${doc.referencia}</td></tr>
+      <tr><td>Fecha del servicio</td><td style="text-align:right;">${doc.fecha}</td></tr>
+    </table>`;
+}
 
-${tituloDoc} (simulado)
-No: ${f.numero}
-Emisor: ${emisor.nombre} | NIT: ${emisor.nit} | NRC: ${emisor.nrc}
-Receptor: ${f.nombreReceptor}${f.nitReceptor ? ` | NIT: ${f.nitReceptor} | NRC: ${f.nrcReceptor || '-'}` : ''}
+function avisoLegal() {
+  return `
+    <p style="font-size:11px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:10px;">
+      Este documento refleja el formato exigido por el Código Tributario de El Salvador
+      (datos del emisor y del receptor, desglose de IVA y monto en letras), pero es de
+      control interno: no ha sido firmado con un certificado digital ni transmitido al
+      Ministerio de Hacienda como Documento Tributario Electrónico (DTE), por lo que
+      no sustituye a un DTE autorizado.
+    </p>`;
+}
 
-Suma Total de Operaciones: $${f.subtotal.toFixed(2)}
-IVA (13%): $${f.iva.toFixed(2)}
-TOTAL A PAGAR: $${f.total.toFixed(2)}
-
-Método de pago: ${f.metodo} | Referencia: ${f.referencia}
-
-Código de Generación: No aplica (documento no transmitido al MH)
-Sello de Recepción: No aplica (documento no transmitido al MH)
-
-Este comprobante es una SIMULACIÓN generada solo por este sistema interno.
-No ha sido firmado ni transmitido al Ministerio de Hacienda y no tiene
-validez como Documento Tributario Electrónico (DTE).`;
-
+function plantillaConsumidorFinal(nombre, doc) {
+  const asunto = `Factura de Consumidor Final ${doc.numero} — ${doc.emisor.nombreComercial}`;
+  const textoPlano = `Hola ${nombre},\n\nFactura de Consumidor Final ${doc.numero} por ${money(doc.total)} (IVA incluido). Referencia de pago: ${doc.referencia}.`;
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; border: 1px solid #ccc; padding: 16px;">
-
-      <div style="background:#fff3cd; border:1px solid #ffe08a; color:#7a5b00; padding:10px 14px; border-radius:6px; font-size:13px; text-align:center; margin-bottom:16px;">
-        ⚠️ <strong>DOCUMENTO SIMULADO</strong> — No es un DTE válido ante el Ministerio de Hacienda. Generado únicamente por el sistema interno de ${emisor.nombre}.
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+      <div style="text-align:center;border-bottom:2px solid #7a4a2a;padding-bottom:10px;margin-bottom:14px;">
+        <h2 style="color:#7a4a2a;margin:0;">FACTURA DE CONSUMIDOR FINAL</h2>
+        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong> &nbsp;|&nbsp; Serie: ${doc.serie}</p>
       </div>
-
-      <table style="width:100%;">
-        <tr>
-          <td style="vertical-align:top; width:70px;">
-            <img src="${LOGO_DATA_URI}" width="48" height="48" alt="${emisor.nombre}" style="display:block;" />
-          </td>
-          <td style="vertical-align:top;">
-            <h2 style="margin:0; color:#7a4a2a;">${emisor.nombre}</h2>
-            <p style="margin:2px 0; font-size:12px; color:#555;">Documento Tributario Electrónico (simulado)</p>
-          </td>
-          <td style="text-align:right; vertical-align:top;">
-            <div style="border:2px solid #7a4a2a; padding:8px; display:inline-block; font-size:13px;">
-              <strong>${tituloDoc}</strong><br>
-              No. ${f.numero}<br>
-              Fecha de generación: ${fechaGeneracionTexto}
-            </div>
-          </td>
-        </tr>
-      </table>
-
-      <table style="width:100%; font-size:12px; margin-top:14px; border-collapse:collapse;">
-        <tr>
-          <td style="width:50%; vertical-align:top; border:1px dashed #7a4a2a; padding:8px;">
-            <strong style="display:block; margin-bottom:4px;">EMISOR</strong>
-            <table>
-              <tr><td><strong>Nombre o Razón Social:</strong> ${emisor.nombre}</td></tr>
-              <tr><td><strong>NIT:</strong> ${emisor.nit}</td></tr>
-              <tr><td><strong>NRC:</strong> ${emisor.nrc}</td></tr>
-              <tr><td><strong>Actividad Económica:</strong> ${emisor.giro}</td></tr>
-              <tr><td><strong>Dirección:</strong> ${emisor.direccion}</td></tr>
-              <tr><td><strong>Correo Electrónico:</strong> ${emisor.correo}</td></tr>
-            </table>
-          </td>
-          <td style="width:50%; vertical-align:top; border:1px dashed #7a4a2a; padding:8px;">
-            <strong style="display:block; margin-bottom:4px;">RECEPTOR</strong>
-            <table>
-              <tr><td><strong>Nombre o Razón Social:</strong> ${f.nombreReceptor}</td></tr>
-              ${filaOpcional('NIT', f.nitReceptor)}
-              ${filaOpcional('NRC', f.nrcReceptor)}
-              ${filaOpcional('Actividad Económica', f.giroReceptor)}
-              ${filaOpcional('Dirección', f.direccionReceptor)}
-            </table>
-          </td>
-        </tr>
-      </table>
-
-      <table style="width:100%; font-size:12px; margin-top:10px; border-collapse:collapse;">
-        <tr>
-          <td style="border:1px dashed #7a4a2a; padding:8px;"><strong>Código de Generación:</strong> No aplica — documento no transmitido al MH</td>
-        </tr>
-        <tr>
-          <td style="border:1px dashed #7a4a2a; padding:8px;"><strong>Sello de Recepción:</strong> No aplica — documento no transmitido al MH</td>
-        </tr>
-        <tr>
-          <td style="border:1px dashed #7a4a2a; padding:8px;"><strong>Modelo de Facturación:</strong> Simulado &nbsp;|&nbsp; <strong>Tipo de Transmisión:</strong> No transmitido</td>
-        </tr>
-      </table>
-
-      <h4 style="margin-bottom:4px; margin-top:16px;">Detalle de ítems</h4>
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <h4 style="margin-bottom:4px;">Emisor</h4>
+      ${bloqueEmisor(doc.emisor)}
+      <h4 style="margin:16px 0 4px;">Cliente</h4>
+      <p style="font-size:12.5px;margin:0;">${doc.receptor.nombre}${doc.receptor.email ? ` — ${doc.receptor.email}` : ''}</p>
+      <h4 style="margin:16px 0 4px;">Detalle</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead>
-          <tr style="background:#f3efe9;">
-            <th style="padding:4px; border:1px dashed #bbb;">Código</th>
-            <th style="padding:4px; border:1px dashed #bbb;">Cantidad</th>
-            <th style="padding:4px; border:1px dashed #bbb;">Unidad</th>
-            <th style="padding:4px; border:1px dashed #bbb; text-align:left;">Descripción</th>
-            <th style="padding:4px; border:1px dashed #bbb;">Precio Unitario</th>
-            <th style="padding:4px; border:1px dashed #bbb;">Dcto. por Ítem</th>
-            <th style="padding:4px; border:1px dashed #bbb;">Ventas Gravadas</th>
+          <tr style="background:#f6f1ec;">
+            <th style="text-align:left;padding:6px 8px;">Cant.</th>
+            <th style="text-align:left;padding:6px 8px;">Descripción</th>
           </tr>
         </thead>
-        <tbody>${filasItems}</tbody>
+        <tbody>${filasItems(doc.items)}</tbody>
       </table>
-
-      <table style="width:100%; margin-top:10px; font-size:13px;">
-        <tr><td></td><td style="text-align:right;">Suma Total de Operaciones:</td><td style="text-align:right; width:110px;">$${f.subtotal.toFixed(2)}</td></tr>
-        <tr><td></td><td style="text-align:right;">Monto global Desc., Rebajas y otros a ventas gravadas:</td><td style="text-align:right;">$0.00</td></tr>
-        <tr><td></td><td style="text-align:right;">Impuesto al Valor Agregado (13%):</td><td style="text-align:right;">$${f.iva.toFixed(2)}</td></tr>
-        <tr><td></td><td style="text-align:right;">Sub-Total:</td><td style="text-align:right;">$${f.subtotal.toFixed(2)}</td></tr>
-        <tr><td></td><td style="text-align:right;">IVA Percibido:</td><td style="text-align:right;">$0.00</td></tr>
-        <tr><td></td><td style="text-align:right;">IVA Retenido:</td><td style="text-align:right;">$0.00</td></tr>
-        <tr><td></td><td style="text-align:right;">Retención Renta:</td><td style="text-align:right;">$0.00</td></tr>
-        <tr><td></td><td style="text-align:right; font-size:16px;"><strong>Monto Total de la Operación:</strong></td><td style="text-align:right; font-size:16px;"><strong>$${f.total.toFixed(2)}</strong></td></tr>
-        <tr><td></td><td style="text-align:right; font-size:16px;"><strong>Total a Pagar:</strong></td><td style="text-align:right; font-size:16px;"><strong>$${f.total.toFixed(2)}</strong></td></tr>
-      </table>
-
-      <p style="font-size:13px; margin-top:16px;">
-        Condición de la operación: Contado &nbsp;|&nbsp; Método de pago: ${f.metodo} &nbsp;|&nbsp; Referencia: ${f.referencia}
-      </p>
-
-      <p style="font-size:11px; color:#999; margin-top:16px; border-top:1px solid #eee; padding-top:8px;">
-        Este comprobante refleja el cálculo de IVA conforme a la Ley de IVA de El Salvador (13%),
-        pero es un documento <strong>SIMULADO</strong> generado por el sistema interno de ${emisor.nombre}.
-        No ha sido firmado digitalmente ni transmitido a la API de recepción de DTE del Ministerio de
-        Hacienda, por lo que no constituye un Documento Tributario Electrónico válido.
-      </p>
+      ${bloqueResumenIVA(doc)}
+      ${piePago(doc)}
+      ${avisoLegal()}
     </div>`;
+  return { asunto, textoPlano, html };
+}
+
+function plantillaCreditoFiscal(nombre, doc) {
+  const asunto = `Comprobante de Crédito Fiscal ${doc.numero} — ${doc.emisor.nombreComercial}`;
+  const textoPlano = `Hola ${nombre},\n\nComprobante de Crédito Fiscal ${doc.numero}. Sub-total gravado: ${money(doc.gravado)}, IVA 13%: ${money(doc.iva)}, Total: ${money(doc.total)}.`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+      <div style="text-align:center;border-bottom:2px solid #7a4a2a;padding-bottom:10px;margin-bottom:14px;">
+        <h2 style="color:#7a4a2a;margin:0;">COMPROBANTE DE CRÉDITO FISCAL</h2>
+        <p style="margin:2px 0;color:#555;">Documento N°: <strong>${doc.numero}</strong> &nbsp;|&nbsp; Serie: ${doc.serie}</p>
+      </div>
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;">
+          <h4 style="margin-bottom:4px;">Emisor</h4>
+          ${bloqueEmisor(doc.emisor)}
+        </div>
+      </div>
+      <h4 style="margin:16px 0 4px;">Receptor</h4>
+      <table style="width:100%;font-size:12.5px;color:#333;">
+        <tr><td><strong>${doc.receptor.nombre}</strong></td></tr>
+        <tr><td>NIT: ${doc.receptor.nit || 'N/D'} &nbsp;|&nbsp; NRC: ${doc.receptor.nrc || 'N/D'}</td></tr>
+        <tr><td>Giro: ${doc.receptor.giro || 'N/D'}</td></tr>
+        <tr><td>Dirección: ${doc.receptor.direccion || 'N/D'}</td></tr>
+      </table>
+      <h4 style="margin:16px 0 4px;">Detalle</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f6f1ec;">
+            <th style="text-align:left;padding:6px 8px;">Cant.</th>
+            <th style="text-align:left;padding:6px 8px;">Descripción</th>
+          </tr>
+        </thead>
+        <tbody>${filasItems(doc.items)}</tbody>
+      </table>
+      ${bloqueResumenIVA(doc)}
+      ${piePago(doc)}
+      ${avisoLegal()}
+    </div>`;
+  return { asunto, textoPlano, html };
+}
+
+async function enviarCorreoFactura(destino, nombre, doc) {
+  const { asunto, textoPlano, html } =
+    doc.tipoDte === '03' ? plantillaCreditoFiscal(nombre, doc) : plantillaConsumidorFinal(nombre, doc);
 
   if (!hayConfiguracionAPI()) {
     console.log('--------------------------------------------------');
-    console.log('[EMAIL] No hay SENDGRID_API_KEY configurada (ver backend/.env).');
-    console.log(`[EMAIL] ${tituloDoc} ${f.numero} para ${destino} por $${f.total.toFixed(2)}`);
+    console.log('[EMAIL] No hay RESEND_API_KEY configurada (ver backend/.env).');
+    console.log(`[EMAIL] ${asunto} para ${destino} por ${money(doc.total)}`);
     console.log('--------------------------------------------------');
     return { simulado: true };
   }
 
-  // Debe ser EXACTAMENTE el correo verificado como "Single Sender" en SendGrid.
-  const remitente = process.env.EMAIL_FROM || 'mesassillas585@gmail.com';
-  const match = remitente.match(/^(.*)<(.+)>$/);
-  const fromEmail = match ? match[2].trim() : remitente.trim();
-  const fromName = match ? match[1].trim().replace(/^"|"$/g, '') : emisor.nombre;
+  const remitente = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-  const respuesta = await fetch(SENDGRID_URL, {
+  const respuesta = await fetch(RESEND_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      personalizations: [{ to: [{ email: destino }], subject: asunto }],
-      from: { email: fromEmail, name: fromName },
-      content: [
-        { type: 'text/plain', value: textoPlano },
-        { type: 'text/html', value: html },
-      ],
+      from: remitente,
+      to: [destino],
+      subject: asunto,
+      text: textoPlano,
+      html,
     }),
   });
 
   if (!respuesta.ok) {
     const detalle = await respuesta.text().catch(() => '');
-    throw new Error(`SendGrid respondió ${respuesta.status}: ${detalle}`);
+    throw new Error(`Resend respondió ${respuesta.status}: ${detalle}`);
   }
 
-  const messageId = respuesta.headers.get('x-message-id');
-  console.log(`[EMAIL] ${f.numero} enviado correctamente a ${destino} (id: ${messageId || 'n/a'})`);
-  return { simulado: false, id: messageId };
+  const data = await respuesta.json();
+  console.log(`[EMAIL] ${doc.numero} enviada correctamente a ${destino} (id: ${data.id})`);
+  return { simulado: false, id: data.id };
 }
 
 module.exports = { enviarCorreoFactura };

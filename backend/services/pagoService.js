@@ -4,6 +4,60 @@ const crypto = require('crypto');
 const { pool } = require('../db');
 const { generarYEnviarFactura } = require('./facturaService');
 
+// Valida los datos de facturacion que vienen del formulario de pago.
+// tipo_dte: '01' Consumidor Final (datos opcionales) | '03' Credito Fiscal
+// (nombre/razon social, NIT y NRC obligatorios por ley; giro y direccion
+// tambien se piden porque el Codigo Tributario los exige en el documento).
+const { validarNIT, validarNRC, validarDUI } = require('../utils/facturaUtils');
+
+function validarDatosFacturacion(datos) {
+  const tipoDte = datos.tipo_dte === '03' ? '03' : '01';
+  const condicionOperacion = datos.condicion_operacion === 'CREDITO' ? 'CREDITO' : 'CONTADO';
+
+  const documento = {
+    tipo_dte: tipoDte,
+    condicion_operacion: condicionOperacion,
+    cliente_nombre: (datos.cliente_nombre || '').trim() || null,
+    cliente_nit: (datos.cliente_nit || '').trim() || null,
+    cliente_dui: (datos.cliente_dui || '').trim() || null,
+    cliente_nrc: (datos.cliente_nrc || '').trim() || null,
+    cliente_giro: (datos.cliente_giro || '').trim() || null,
+    cliente_direccion: (datos.cliente_direccion || '').trim() || null,
+  };
+
+  if (tipoDte === '03') {
+    const faltantes = [];
+    if (!documento.cliente_nombre) faltantes.push('nombre o razon social');
+    if (!documento.cliente_nit) faltantes.push('NIT');
+    if (!documento.cliente_nrc) faltantes.push('NRC');
+    if (!documento.cliente_giro) faltantes.push('giro o actividad economica');
+    if (!documento.cliente_direccion) faltantes.push('direccion');
+    if (faltantes.length) {
+      const error = new Error(
+        `Para Credito Fiscal hacen falta estos datos del cliente: ${faltantes.join(', ')}`
+      );
+      error.status = 400;
+      throw error;
+    }
+    if (!validarNIT(documento.cliente_nit)) {
+      const error = new Error('El NIT ingresado no tiene un formato valido');
+      error.status = 400;
+      throw error;
+    }
+    if (!validarNRC(documento.cliente_nrc)) {
+      const error = new Error('El NRC ingresado no tiene un formato valido');
+      error.status = 400;
+      throw error;
+    }
+  } else if (documento.cliente_dui && !validarDUI(documento.cliente_dui)) {
+    const error = new Error('El DUI ingresado no tiene un formato valido');
+    error.status = 400;
+    throw error;
+  }
+
+  return documento;
+}
+
 // Precios simulados por recurso (unidad), usados solo para calcular el monto.
 const PRECIO_POR_TIPO = { mesa: 5, silla: 1 };
 
@@ -48,10 +102,9 @@ async function calcularMonto(reservaId) {
   return rows.reduce((total, fila) => total + fila.cantidad * (PRECIO_POR_TIPO[fila.tipo] || 0), 0);
 }
 
-// datos: { reserva_id, metodo: 'tarjeta' | 'transferencia', numero_tarjeta?, vencimiento?, cvv?,
-//          tipo_dte?: '01' | '03', nombre_receptor?, nit_receptor?, nrc_receptor?, giro_receptor?, direccion_receptor? }
+// datos: { reserva_id, metodo: 'tarjeta' | 'transferencia', numero_tarjeta?, vencimiento?, cvv? }
 async function simularPago(usuario, datos) {
-  const { reserva_id, metodo, tipo_dte } = datos;
+  const { reserva_id, metodo } = datos;
 
   if (!reserva_id) {
     const error = new Error('Debes indicar la reserva a pagar');
@@ -62,20 +115,6 @@ async function simularPago(usuario, datos) {
     const error = new Error('Método de pago inválido');
     error.status = 400;
     throw error;
-  }
-  if (tipo_dte && !['01', '03'].includes(tipo_dte)) {
-    const error = new Error('Tipo de comprobante inválido');
-    error.status = 400;
-    throw error;
-  }
-  // El Crédito Fiscal (03) exige identificar al receptor ante Hacienda.
-  if (tipo_dte === '03') {
-    const { nombre_receptor, nit_receptor, nrc_receptor, giro_receptor } = datos;
-    if (!nombre_receptor || !nit_receptor || !nrc_receptor || !giro_receptor) {
-      const error = new Error('Para Crédito Fiscal debes indicar razón social, NIT, NRC y giro');
-      error.status = 400;
-      throw error;
-    }
   }
 
   const cliente = await pool.connect();
@@ -144,6 +183,10 @@ async function simularPago(usuario, datos) {
 // Envoltorio: deja el pago registrado (aprobado o rechazado) y, si fue
 // rechazado, lo informa como error para que el frontend lo muestre así.
 async function procesarPago(usuario, datos) {
+  // Se valida ANTES de cobrar: si faltan datos de Crédito Fiscal no tiene
+  // sentido dejar el pago aprobado sin poder emitir el documento correcto.
+  const datosFacturacion = validarDatosFacturacion(datos);
+
   const pago = await simularPago(usuario, datos);
   if (pago.estado === 'rechazado') {
     const error = new Error('El pago fue rechazado (simulado). Intenta con otro método o tarjeta.');
@@ -152,14 +195,7 @@ async function procesarPago(usuario, datos) {
     throw error;
   }
 
-  const {
-    tipo_dte, nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor,
-  } = datos;
-  const datosReceptor = {
-    tipo_dte, nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor,
-  };
-
-  const factura = await generarYEnviarFactura(pago, datosReceptor);
+  const factura = await generarYEnviarFactura(pago, datosFacturacion);
   return { ...pago, factura };
 }
 

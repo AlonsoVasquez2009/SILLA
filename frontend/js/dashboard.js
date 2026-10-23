@@ -4,6 +4,7 @@
   configurarLogout();
 
   if (usuario.rol !== 'admin') {
+    document.getElementById('enlace-incidencias').remove();
     document.getElementById('enlace-historial').remove();
     document.getElementById('enlace-usuarios').remove();
   }

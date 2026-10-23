@@ -93,35 +93,38 @@
       <div id="modal-pago-mensaje"></div>
       <form id="form-pago">
         <div class="campo">
-          <label for="pago-tipo-dte">Tipo de comprobante</label>
+          <label for="pago-tipo-dte">Tipo de documento</label>
           <select id="pago-tipo-dte">
             <option value="01">Factura de Consumidor Final</option>
             <option value="03">Comprobante de Crédito Fiscal</option>
           </select>
         </div>
-        <div id="campos-credito-fiscal" style="display: none;">
+        <div id="campos-credito-fiscal" style="display:none;">
           <div class="campo">
-            <label for="pago-razon-social">Razón social / Nombre</label>
-            <input type="text" id="pago-razon-social" placeholder="Nombre o razón social del receptor" />
+            <label for="cf-nombre">Nombre o razón social</label>
+            <input type="text" id="cf-nombre" placeholder="Nombre completo o razón social" />
           </div>
           <div class="form-fila">
             <div class="campo">
-              <label for="pago-nit">NIT</label>
-              <input type="text" id="pago-nit" placeholder="0000-000000-000-0" />
+              <label for="cf-nit">NIT</label>
+              <input type="text" id="cf-nit" placeholder="0614-010190-101-2" maxlength="17" />
             </div>
             <div class="campo">
-              <label for="pago-nrc">NRC</label>
-              <input type="text" id="pago-nrc" placeholder="000000-0" />
+              <label for="cf-nrc">NRC</label>
+              <input type="text" id="cf-nrc" placeholder="123456-7" maxlength="10" />
             </div>
           </div>
           <div class="campo">
-            <label for="pago-giro">Giro</label>
-            <input type="text" id="pago-giro" placeholder="Actividad económica" />
+            <label for="cf-giro">Giro o actividad económica</label>
+            <input type="text" id="cf-giro" placeholder="Ej: Servicios de organización de eventos" />
           </div>
           <div class="campo">
-            <label for="pago-direccion">Dirección</label>
-            <input type="text" id="pago-direccion" placeholder="Dirección del receptor" />
+            <label for="cf-direccion">Dirección</label>
+            <input type="text" id="cf-direccion" placeholder="Dirección del cliente" />
           </div>
+          <p style="color: var(--texto-suave); font-size: 0.8rem;">
+            Estos datos son obligatorios por ley para emitir un Comprobante de Crédito Fiscal.
+          </p>
         </div>
         <div class="campo">
           <label for="pago-metodo">Método de pago</label>

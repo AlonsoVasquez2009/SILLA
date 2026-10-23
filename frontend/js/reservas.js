@@ -141,12 +141,6 @@
     const monto = calcularMonto(reserva.items);
     modalPagoMonto.textContent = `Total a pagar: $${monto.toFixed(2)} (precio simulado)`;
     modalPagoFondo.classList.add('visible');
-    document.body.classList.add('scroll-bloqueado');
-  }
-
-  function cerrarModalPago() {
-    modalPagoFondo.classList.remove('visible');
-    document.body.classList.remove('scroll-bloqueado');
   }
 
   campoMetodo.addEventListener('change', () => {
@@ -158,33 +152,29 @@
   });
 
   document.getElementById('modal-pago-cancelar').addEventListener('click', () => {
-    cerrarModalPago();
+    modalPagoFondo.classList.remove('visible');
   });
 
   formPago.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     modalPagoMensaje.innerHTML = '';
 
-    const datos = { reserva_id: reservaEnPago.id, metodo: campoMetodo.value };
+    const datos = {
+      reserva_id: reservaEnPago.id,
+      metodo: campoMetodo.value,
+      tipo_dte: campoTipoDte.value,
+    };
     if (datos.metodo === 'tarjeta') {
       datos.numero_tarjeta = document.getElementById('pago-numero').value.trim();
       datos.vencimiento = document.getElementById('pago-vencimiento').value.trim();
       datos.cvv = document.getElementById('pago-cvv').value.trim();
     }
-
-    datos.tipo_dte = campoTipoDte.value;
     if (datos.tipo_dte === '03') {
-      const nombre_receptor = document.getElementById('pago-razon-social').value.trim();
-      const nit_receptor = document.getElementById('pago-nit').value.trim();
-      const nrc_receptor = document.getElementById('pago-nrc').value.trim();
-      const giro_receptor = document.getElementById('pago-giro').value.trim();
-      const direccion_receptor = document.getElementById('pago-direccion').value.trim();
-
-      if (!nombre_receptor || !nit_receptor || !nrc_receptor || !giro_receptor) {
-        modalPagoMensaje.innerHTML = '<div class="mensaje mensaje--error">Para Crédito Fiscal, completa razón social, NIT, NRC y giro.</div>';
-        return;
-      }
-      Object.assign(datos, { nombre_receptor, nit_receptor, nrc_receptor, giro_receptor, direccion_receptor });
+      datos.cliente_nombre = document.getElementById('cf-nombre').value.trim();
+      datos.cliente_nit = document.getElementById('cf-nit').value.trim();
+      datos.cliente_nrc = document.getElementById('cf-nrc').value.trim();
+      datos.cliente_giro = document.getElementById('cf-giro').value.trim();
+      datos.cliente_direccion = document.getElementById('cf-direccion').value.trim();
     }
 
     const botonPagar = document.getElementById('modal-pago-pagar');
@@ -192,10 +182,11 @@
     botonPagar.textContent = 'Procesando…';
 
     try {
-      await api.crearPago(datos);
-      cerrarModalPago();
+      const resultado = await api.crearPago(datos);
+      modalPagoFondo.classList.remove('visible');
       await cargarReservas();
-      mensajeLista.innerHTML = '<div class="mensaje mensaje--exito">Pago aprobado (simulado). Te enviamos la factura por correo.</div>';
+      const numeroFactura = resultado?.pago?.factura?.numero ? ` (${resultado.pago.factura.numero})` : '';
+      mensajeLista.innerHTML = `<div class="mensaje mensaje--exito">Pago aprobado. Te enviamos la factura${numeroFactura} por correo.</div>`;
     } catch (error) {
       modalPagoMensaje.innerHTML = `<div class="mensaje mensaje--error">${error.message}</div>`;
     } finally {

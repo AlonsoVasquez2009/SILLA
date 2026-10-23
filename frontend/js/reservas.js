@@ -132,6 +132,15 @@
     }
   });
 
+  // Bloquea/desbloquea el scroll de la página de fondo mientras el modal
+  // de pago está abierto, para que solo haga scroll el contenido del modal.
+  function bloquearScrollPagina() {
+    document.body.classList.add('modal-abierto');
+  }
+  function desbloquearScrollPagina() {
+    document.body.classList.remove('modal-abierto');
+  }
+
   function abrirModalPago(reserva) {
     reservaEnPago = reserva;
     modalPagoMensaje.innerHTML = '';
@@ -141,6 +150,7 @@
     const monto = calcularMonto(reserva.items);
     modalPagoMonto.textContent = `Total a pagar: $${monto.toFixed(2)} (precio simulado)`;
     modalPagoFondo.classList.add('visible');
+    bloquearScrollPagina();
   }
 
   campoMetodo.addEventListener('change', () => {
@@ -153,6 +163,7 @@
 
   document.getElementById('modal-pago-cancelar').addEventListener('click', () => {
     modalPagoFondo.classList.remove('visible');
+    desbloquearScrollPagina();
   });
 
   formPago.addEventListener('submit', async (evento) => {
@@ -184,6 +195,7 @@
     try {
       const resultado = await api.crearPago(datos);
       modalPagoFondo.classList.remove('visible');
+      desbloquearScrollPagina();
       await cargarReservas();
       const numeroFactura = resultado?.pago?.factura?.numero ? ` (${resultado.pago.factura.numero})` : '';
       mensajeLista.innerHTML = `<div class="mensaje mensaje--exito">Pago aprobado. Te enviamos la factura${numeroFactura} por correo.</div>`;

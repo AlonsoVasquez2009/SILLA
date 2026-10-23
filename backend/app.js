@@ -14,6 +14,8 @@ const reporteRoutes = require('./routes/reporteRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const pagoRoutes = require('./routes/pagoRoutes');
 const incidenciaRoutes = require('./routes/incidenciaRoutes');
+const trabajadorRoutes = require('./routes/trabajadorRoutes');
+const salarioRoutes = require('./routes/salarioRoutes');
 
 const app = express();
 
@@ -53,6 +55,8 @@ app.use('/api/reportes', reporteRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/pagos', pagoRoutes);
 app.use('/api/incidencias', incidenciaRoutes);
+app.use('/api/trabajadores', trabajadorRoutes);
+app.use('/api/salarios', salarioRoutes);
 
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 

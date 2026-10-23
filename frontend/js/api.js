@@ -89,4 +89,17 @@ const api = {
   crearUsuario: (datos) => solicitar('/usuarios', { method: 'POST', body: JSON.stringify(datos) }),
   modificarUsuario: (id, datos) =>
     solicitar(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
+
+  // Empleados (trabajadores)
+  listarTrabajadores: () => solicitar('/trabajadores'),
+  crearTrabajador: (datos) => solicitar('/trabajadores', { method: 'POST', body: JSON.stringify(datos) }),
+  modificarTrabajador: (id, datos) =>
+    solicitar(`/trabajadores/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
+
+  // Salarios (planillas)
+  listarSalarios: (trabajadorId) => {
+    const params = trabajadorId ? `?trabajador_id=${trabajadorId}` : '';
+    return solicitar(`/salarios${params}`);
+  },
+  registrarSalario: (datos) => solicitar('/salarios', { method: 'POST', body: JSON.stringify(datos) }),
 };
